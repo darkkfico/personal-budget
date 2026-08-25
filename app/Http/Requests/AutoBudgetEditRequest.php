@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\AutoBudget;
+use App\Models\CustomBudget;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,8 @@ class AutoBudgetEditRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $budget = AutoBudget::where('user_id', Auth::id());
-        return $budget !== null;
+        return AutoBudget::where('user_id', Auth::id())->exists()
+            || CustomBudget::where('user_id', Auth::id())->exists();
     }
 
     /**

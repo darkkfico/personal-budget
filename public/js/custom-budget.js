@@ -1,10 +1,12 @@
 let sections = document.querySelector("#sections");
-let addSections = document.getElementById("addSection");
+let addSectionBtn = document.getElementById("addSection");
 
 let sectionNumber = 2;
 
-addSection.addEventListener("click", e => {
+addSectionBtn?.addEventListener("click", e => {
     e.preventDefault();
+    if (!sections) return;
+
     const html = `<div class='w-full relative animate-myanimation'>
                                 <span class="text-red-500 absolute top-0 left-0">*</span>
                                 <input type='text' name='custom-field${sectionNumber}'
@@ -23,4 +25,4 @@ addSection.addEventListener("click", e => {
 
     sections.insertAdjacentHTML("beforeend", html);
     sectionNumber++;
-})
+});

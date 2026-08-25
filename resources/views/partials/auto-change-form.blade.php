@@ -1,0 +1,40 @@
+<form method="POST" action="{{ $autoFormAction }}" id="autoChangeForm"
+    class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-10 px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl {{ ($currentType ?? 'auto') === 'auto' ? '' : 'hidden' }}">
+    @csrf
+    @method('PATCH')
+    <div class="relative w-full">
+        <input type="number" placeholder="Your budget" name="budget"
+            class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
+        @error('budget')
+            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+        @enderror
+    </div>
+    <div class="relative w-full">
+        <input type="number" placeholder="Reset date" name="reset_date"
+            class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
+        @error('reset_date')
+            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+        @enderror
+    </div>
+    <div class="relative w-full">
+        <select name="currency"
+            class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
+            <option value="select">Select currency</option>
+            @foreach ($currencies as $currency)
+                <option value="{{ $currency['code'] }}">{{ $currency['name'] }} ({{ $currency['code'] }})</option>
+            @endforeach
+        </select>
+        @error('currency')
+            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+        @enderror
+    </div>
+
+    <div class="flex justify-center items-center">
+        <div class="group inline-block space-x-3">
+            <button
+                class="text-butter bg-linear-to-r inline-block cursor-pointer from-butter to-secondary font-bold text-2xl group-hover:text-secondary px-7 py-4 rounded-xl group-hover:translate-x-2 transition duration-300">Submit</button>
+            <i
+                class="fa-solid fa-angles-right inline-block text-secondary -translate-x-7 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-200"></i>
+        </div>
+    </div>
+</form>

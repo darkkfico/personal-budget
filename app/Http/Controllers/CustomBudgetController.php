@@ -178,7 +178,6 @@ class CustomBudgetController extends Controller
 
     public function edit(Request $request)
     {
-
         session()->forget("amount_left");
         session()->forget("deleted_amount");
         session()->forget("last_day");
@@ -190,9 +189,7 @@ class CustomBudgetController extends Controller
         ];
 
         $sectionNumber = 1;
-
         $sum = 0;
-
 
         while ($request->has("custom-field" . $sectionNumber)) {
             $rules["custom-field" . $sectionNumber] = ["required", "string"];
@@ -210,14 +207,19 @@ class CustomBudgetController extends Controller
             ]);
         }
 
+        $autoBudget = AutoBudget::where('user_id', Auth::id())->first();
+        $customBudget = CustomBudget::where('user_id', Auth::id())->first();
+
+        if ($autoBudget && !$customBudget) {
+            return $this->convertFromAuto($request, $autoBudget);
+        }
+
         $customBudget = CustomBudget::find($request->budget_id);
         $fields = CustomBudgetField::where('custom_budget_id', $customBudget->id)->orderBy('id')->get();
         $customBudgetSnapshot = CustomBudgetSnapshot::find($request->budget_id);
         $fieldsSnapshot = CustomBudgetFieldSnapshot::where("custom_budget_snapshot_id", $customBudget->id)->orderBy("id")->get();
 
-
         $i = 1;
-
 
         foreach ($fields as $field) {
             while ($request->has(("custom-field{$i}"))) {
@@ -241,7 +243,6 @@ class CustomBudgetController extends Controller
             }
         }
 
-
         $customBudget->update([
             'budget_amount' => $request->budget,
             'currency' => $request->currency,
@@ -253,7 +254,6 @@ class CustomBudgetController extends Controller
             'currency' => $request->currency,
             'reset_date' => $request->reset_date
         ]);
-
 
         $i = 1;
 
@@ -277,8 +277,53 @@ class CustomBudgetController extends Controller
             $i++;
         }
 
+        session(['type' => 'custom']);
 
         return redirect()->route("custom.index");
+    }
+
+    private function convertFromAuto(Request $request, AutoBudget $autoBudget)
+    {
+        $autoBudget->delete();
+
+        $customBudget = CustomBudget::create([
+            'user_id' => Auth::id(),
+            'budget_amount' => $request->budget,
+            'currency' => $request->currency,
+            'reset_date' => $request->reset_date
+        ]);
+
+        $customBudgetSnapshot = CustomBudgetSnapshot::create([
+            'user_id' => Auth::id(),
+            'budget_amount' => $request->budget,
+            'currency' => $request->currency,
+            'reset_date' => $request->reset_date,
+            "snapshot" => now(),
+            "month" => Carbon::now()->format('n'),
+        ]);
+
+        $i = 1;
+
+        while ($request->has("custom-field" . $i)) {
+            CustomBudgetField::create([
+                "custom_budget_id" => $customBudget->id,
+                "field_name" => $request->input("custom-field{$i}"),
+                "field_amount" => $customBudget->budget_amount * ($request->input("custom-field{$i}-amount") / 100),
+            ]);
+            CustomBudgetFieldSnapshot::create([
+                "custom_budget_snapshot_id" => $customBudgetSnapshot->id,
+                "field_name" => $request->input("custom-field{$i}"),
+                "field_amount" => $customBudgetSnapshot->budget_amount * ($request->input("custom-field{$i}-amount") / 100),
+                "snapshot" => now(),
+                "month" => Carbon::now()->format('n'),
+            ]);
+            $i++;
+        }
+
+        session(['type' => 'custom']);
+        session(['budget_id' => $customBudget->id]);
+
+        return redirect()->route("custom.formNonResetable");
     }
 
     public function history(CustomBudget $budget){
