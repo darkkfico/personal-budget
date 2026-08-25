@@ -167,13 +167,13 @@ class CustomBudgetController extends Controller
 
     public function change()
     {
-
         $currencies = Storage::json('currencies.json');
         $budget = CustomBudget::where("user_id", Auth::id())->first();
         $id = $budget->id;
-        $fields = CustomBudgetField::where('custom_budget_id', $id)->get();
+        $budgetAmount = $budget->budget_amount;
+        $fields = CustomBudgetField::where('custom_budget_id', $id)->orderBy('id')->get();
 
-        return view("custom.change", compact("id", "currencies", "fields"));
+        return view("custom.change", compact("id", "currencies", "fields", "budgetAmount"));
     }
 
     public function edit(Request $request)
@@ -190,16 +190,27 @@ class CustomBudgetController extends Controller
 
         $sectionNumber = 1;
         $sum = 0;
+        $submitted = [];
 
         while ($request->has("custom-field" . $sectionNumber)) {
             $rules["custom-field" . $sectionNumber] = ["required", "string"];
             $rules["custom-field" . $sectionNumber . "-amount"] = ["required", "numeric"];
 
             $sum += $request->input("custom-field" . $sectionNumber . "-amount");
+            $submitted[] = [
+                'name' => $request->input("custom-field{$sectionNumber}"),
+                'percent' => $request->input("custom-field{$sectionNumber}-amount"),
+            ];
             $sectionNumber++;
         }
 
         $request->validate($rules);
+
+        if (count($submitted) === 0) {
+            return back()->withErrors([
+                "sum" => "Add at least one section!",
+            ]);
+        }
 
         if ($sum != 100) {
             return back()->withErrors([
@@ -216,32 +227,10 @@ class CustomBudgetController extends Controller
 
         $customBudget = CustomBudget::find($request->budget_id);
         $fields = CustomBudgetField::where('custom_budget_id', $customBudget->id)->orderBy('id')->get();
-        $customBudgetSnapshot = CustomBudgetSnapshot::find($request->budget_id);
-        $fieldsSnapshot = CustomBudgetFieldSnapshot::where("custom_budget_snapshot_id", $customBudget->id)->orderBy("id")->get();
-
-        $i = 1;
-
-        foreach ($fields as $field) {
-            while ($request->has(("custom-field{$i}"))) {
-                if (CustomBudgetItem::where("field_name", $field->field_name)) {
-                    CustomBudgetItem::where("field_name", $field->field_name)->update([
-                        'field_name' => $request->input("custom-field{$i}")
-                    ]);
-                }
-                $i++;
-            }
-        }
-
-        foreach ($fieldsSnapshot as $field) {
-            while ($request->has(("custom-field{$i}"))) {
-                if (CustomBudgetItemSnapshot::where("field_name", $field->field_name)) {
-                    CustomBudgetItemSnapshot::where("field_name", $field->field_name)->update([
-                        'field_name' => $request->input("custom-field{$i}")
-                    ]);
-                }
-                $i++;
-            }
-        }
+        $customBudgetSnapshot = CustomBudgetSnapshot::where('user_id', Auth::id())->orderByDesc('id')->first();
+        $fieldsSnapshot = $customBudgetSnapshot
+            ? CustomBudgetFieldSnapshot::where("custom_budget_snapshot_id", $customBudgetSnapshot->id)->orderBy("id")->get()
+            : collect();
 
         $customBudget->update([
             'budget_amount' => $request->budget,
@@ -249,32 +238,74 @@ class CustomBudgetController extends Controller
             'reset_date' => $request->reset_date
         ]);
 
-        $customBudgetSnapshot->update([
-            'budget_amount' => $request->budget,
-            'currency' => $request->currency,
-            'reset_date' => $request->reset_date
-        ]);
-
-        $i = 1;
-
-        foreach ($fields as $field) {
-            if ($request->input("custom-field{$i}")) {
-                $field->update([
-                    'field_name' => $request->input("custom-field{$i}"),
-                    'field_amount' => $customBudget->budget_amount * ($request->input("custom-field{$i}-amount") / 100)
-                ]);
-            }
-            $i++;
+        if ($customBudgetSnapshot) {
+            $customBudgetSnapshot->update([
+                'budget_amount' => $request->budget,
+                'currency' => $request->currency,
+                'reset_date' => $request->reset_date
+            ]);
         }
 
-        foreach ($fieldsSnapshot as $field) {
-            if ($request->input("custom-field{$i}")) {
-                $field->update([
-                    'field_name' => $request->input("custom-field{$i}"),
-                    'field_amount' => $customBudget->budget_amount * ($request->input("custom-field{$i}-amount") / 100)
+        foreach ($fields as $index => $field) {
+            if (!isset($submitted[$index])) {
+                $field->delete();
+                continue;
+            }
+
+            $oldName = $field->field_name;
+            $newName = $submitted[$index]['name'];
+
+            if ($oldName !== $newName) {
+                CustomBudgetItem::where('custom_budget_field_id', $field->id)->update([
+                    'field_name' => $newName,
                 ]);
             }
-            $i++;
+
+            $field->update([
+                'field_name' => $newName,
+                'field_amount' => $customBudget->budget_amount * ($submitted[$index]['percent'] / 100),
+            ]);
+        }
+
+        for ($index = $fields->count(); $index < count($submitted); $index++) {
+            CustomBudgetField::create([
+                'custom_budget_id' => $customBudget->id,
+                'field_name' => $submitted[$index]['name'],
+                'field_amount' => $customBudget->budget_amount * ($submitted[$index]['percent'] / 100),
+            ]);
+        }
+
+        if ($customBudgetSnapshot) {
+            foreach ($fieldsSnapshot as $index => $field) {
+                if (!isset($submitted[$index])) {
+                    $field->delete();
+                    continue;
+                }
+
+                $oldName = $field->field_name;
+                $newName = $submitted[$index]['name'];
+
+                if ($oldName !== $newName) {
+                    CustomBudgetItemSnapshot::where('custom_budget_field_snapshot_id', $field->id)->update([
+                        'field_name' => $newName,
+                    ]);
+                }
+
+                $field->update([
+                    'field_name' => $newName,
+                    'field_amount' => $customBudget->budget_amount * ($submitted[$index]['percent'] / 100),
+                ]);
+            }
+
+            for ($index = $fieldsSnapshot->count(); $index < count($submitted); $index++) {
+                CustomBudgetFieldSnapshot::create([
+                    'custom_budget_snapshot_id' => $customBudgetSnapshot->id,
+                    'field_name' => $submitted[$index]['name'],
+                    'field_amount' => $customBudget->budget_amount * ($submitted[$index]['percent'] / 100),
+                    'snapshot' => now(),
+                    'month' => Carbon::now()->format('n'),
+                ]);
+            }
         }
 
         session(['type' => 'custom']);

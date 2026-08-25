@@ -24,6 +24,7 @@
                 'currencies' => $currencies,
                 'fields' => collect(),
                 'id' => null,
+                'budgetAmount' => null,
             ])
         </div>
     </main>

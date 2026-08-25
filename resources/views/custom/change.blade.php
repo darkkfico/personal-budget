@@ -24,9 +24,11 @@
                 'currencies' => $currencies,
                 'fields' => $fields,
                 'id' => $id,
+                'budgetAmount' => $budgetAmount,
             ])
         </div>
     </main>
 
     <script src="{{ asset('js/budget-type-toggle.js') }}"></script>
+    <script src="{{ asset('js/custom-budget.js') }}"></script>
 @endsection

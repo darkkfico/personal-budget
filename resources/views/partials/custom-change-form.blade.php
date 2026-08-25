@@ -13,57 +13,73 @@
         @enderror
     </div>
 
-    @if (isset($fields) && $fields->count() > 0)
-        @php $i = 1; @endphp
-        @foreach ($fields as $field)
-            <div class="w-full relative">
-                <input type="text" name="custom-field{{ $i }}"
-                    placeholder="Name of section {{ $i }}"
-                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary placeholder:font-semibold">
-                @error("custom-field{{ $i }}")
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
+    <div id="sections" class="w-full space-y-10">
+        @if (isset($fields) && $fields->count() > 0)
+            @php $i = 1; @endphp
+            @foreach ($fields as $field)
+                <div class="budget-section w-full space-y-6" data-section>
+                    <div class="w-full relative">
+                        <input type="text" name="custom-field{{ $i }}" data-role="name"
+                            placeholder="Name of section {{ $i }}"
+                            value="{{ $field->field_name }}"
+                            class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary placeholder:font-semibold">
+                        @error("custom-field{{ $i }}")
+                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="relative inline-block w-full">
+                        <input type="number" name="custom-field{{ $i }}-amount" data-role="amount" min="0" max="100"
+                            placeholder="Percentage of section {{ $i }}"
+                            value="{{ $budgetAmount ? round(($field->field_amount / $budgetAmount) * 100) : '' }}"
+                            class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
+                        <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
+                        @error("custom-field{{ $i }}-amount")
+                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                        @enderror
+                        @error('sum')
+                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <button type="button"
+                        class="remove-section {{ $fields->count() <= 1 ? 'hidden' : 'inline-flex' }} items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
+                        <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                        <span class="pointer-events-none">Remove section</span>
+                    </button>
+                </div>
+                @php $i++; @endphp
+            @endforeach
+        @else
+            <div class="budget-section w-full space-y-6" data-section>
+                <div class="w-full relative">
+                    <span class="text-red-500 absolute top-0 left-0">*</span>
+                    <input type="text" name="custom-field1" data-role="name"
+                        placeholder="Name of section 1, eg Groceries..."
+                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
+                    @error('custom-field1')
+                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div class="relative inline-block w-full">
+                    <input type="number" name="custom-field1-amount" data-role="amount" min="0" max="100"
+                        placeholder="Percentage of section 1"
+                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
+                    <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
+                    @error('custom-field1-amount')
+                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                    @enderror
+                    @error('sum')
+                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <button type="button"
+                    class="remove-section hidden items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
+                    <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                    <span class="pointer-events-none">Remove section</span>
+                </button>
             </div>
-            <div class="relative inline-block w-full">
-                <input type="number" name="custom-field{{ $i }}-amount" min="0" max="100"
-                    placeholder="Percentage of section {{ $i }}"
-                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
-                <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
-                @error("custom-field{{ $i }}-amount")
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
-                @error('sum')
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
-            </div>
-            @php $i++; @endphp
-        @endforeach
-    @else
-        <div id="sections" class="w-full space-y-10">
-            <div class="w-full relative">
-                <span class="text-red-500 absolute top-0 left-0">*</span>
-                <input type="text" name="custom-field1"
-                    placeholder="Name of section 1, eg Groceries..."
-                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
-                @error('custom-field1')
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="relative inline-block w-full">
-                <input type="number" name="custom-field1-amount" min="0" max="100"
-                    placeholder="Percentage of section 1"
-                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
-                <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
-                @error('custom-field1-amount')
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
-                @error('sum')
-                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                @enderror
-            </div>
-        </div>
-        <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
-    @endif
+        @endif
+    </div>
+    <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
 
     <div class="w-full relative">
         <input type="number" name="reset_date" placeholder="Reset Date"

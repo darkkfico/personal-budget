@@ -11,7 +11,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('app:reset-items-amount-auto-budget')]
-#[Description('Command description')]
+#[Description('Reset auto budget item amounts on reset day, excluding Savings')]
 class ResetItemsAmountAutoBudget extends Command
 {
     /**
@@ -19,14 +19,24 @@ class ResetItemsAmountAutoBudget extends Command
      */
     public function handle()
     {
-        $today = (string) Carbon::now()->day;
+        $today = Carbon::now()->day;
 
-        AutoBudgetItem::whereIn(
-            'auto_budget_field_id',
-            AutoBudgetField::whereIn(
+        $fieldIds = AutoBudgetField::query()
+            ->whereIn(
                 'auto_budget_id',
                 AutoBudget::where('reset_date', $today)->pluck('id')
-            )->pluck('id')
-        )->update(['item_amount' => 0]);
+            )
+            ->where('field_name', '!=', 'Savings')
+            ->pluck('id');
+
+        if ($fieldIds->isEmpty()) {
+            return self::SUCCESS;
+        }
+
+        AutoBudgetItem::whereIn('auto_budget_field_id', $fieldIds)
+            ->where('field_name', '!=', 'Savings')
+            ->update(['item_amount' => 0]);
+
+        return self::SUCCESS;
     }
 }
