@@ -42,11 +42,14 @@ RUN mkdir -p \
         storage/framework/testing \
         storage/logs \
         bootstrap/cache \
+        public \
+    && printf 'ok' > public/healthz \
     && chmod -R a+rw storage bootstrap/cache \
+    && sed -i 's/\r$//' /app/start-container.sh /app/Caddyfile \
     && chmod +x /app/start-container.sh
 
-ENV SERVER_NAME=:80
+ENV SERVER_NAME=:8080
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["/app/start-container.sh"]

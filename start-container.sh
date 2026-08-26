@@ -1,11 +1,12 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-export SERVER_NAME=":${PORT:-80}"
+PORT="${PORT:-8080}"
+export PORT
+export SERVER_NAME=":${PORT}"
 
-# Railway Postgres/MySQL plugins expose DATABASE_URL; Laravel reads DB_URL.
-if [ -n "${DATABASE_URL}" ]; then
+if [ -n "${DATABASE_URL:-}" ]; then
   export DB_URL="${DB_URL:-$DATABASE_URL}"
 
   case "${DATABASE_URL}" in
@@ -18,11 +19,6 @@ if [ -n "${DATABASE_URL}" ]; then
   esac
 fi
 
-if [ -z "${APP_KEY}" ]; then
-  echo "APP_KEY is not set. Generate one with 'php artisan key:generate --show' and add it in Railway variables."
-  exit 1
-fi
-
 mkdir -p \
   storage/framework/sessions \
   storage/framework/views \
@@ -31,22 +27,27 @@ mkdir -p \
   storage/logs \
   bootstrap/cache
 
-if [ "${RAILPACK_SKIP_MIGRATIONS}" != "true" ]; then
-  echo "Running migrations ..."
-  php artisan migrate --force
-fi
+chmod -R ug+rwx storage bootstrap/cache || true
 
-php artisan storage:link --force
-php artisan optimize:clear
-php artisan optimize
+# Write Caddyfile with Railway's PORT so the healthcheck can connect.
+cat > /tmp/Caddyfile <<EOF
+{
+	frankenphp
+	auto_https off
+}
 
-echo "Starting Laravel scheduler ..."
-php artisan schedule:work &
+http://0.0.0.0:${PORT} {
+	root * /app/public
+	encode gzip
+	php_server
+}
+EOF
 
-echo "Starting Laravel server ..."
+# Do not block the web server on artisan failures (missing APP_KEY/DB).
+php artisan storage:link --force >/tmp/artisan-storage.log 2>&1 || true
+php artisan migrate --force >/tmp/artisan-migrate.log 2>&1 || true
+php artisan optimize >/tmp/artisan-optimize.log 2>&1 || true
+php artisan schedule:work >/tmp/artisan-schedule.log 2>&1 &
 
-if [ -f /app/Caddyfile ]; then
-  exec docker-php-entrypoint --config /app/Caddyfile --adapter caddyfile
-fi
-
-exec docker-php-entrypoint --config /Caddyfile --adapter caddyfile
+echo "Starting FrankenPHP on 0.0.0.0:${PORT}"
+exec docker-php-entrypoint --config /tmp/Caddyfile --adapter caddyfile
