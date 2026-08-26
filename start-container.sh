@@ -2,6 +2,8 @@
 
 set -e
 
+export SERVER_NAME=":${PORT:-80}"
+
 # Railway Postgres/MySQL plugins expose DATABASE_URL; Laravel reads DB_URL.
 if [ -n "${DATABASE_URL}" ]; then
   export DB_URL="${DB_URL:-$DATABASE_URL}"
@@ -21,21 +23,30 @@ if [ -z "${APP_KEY}" ]; then
   exit 1
 fi
 
-if [ "$IS_LARAVEL" = "true" ]; then
-  if [ "$RAILPACK_SKIP_MIGRATIONS" != "true" ]; then
-    echo "Running migrations ..."
-    php artisan migrate --force
-  fi
+mkdir -p \
+  storage/framework/sessions \
+  storage/framework/views \
+  storage/framework/cache \
+  storage/framework/testing \
+  storage/logs \
+  bootstrap/cache
 
-  php artisan storage:link --force
-  php artisan optimize:clear
-  php artisan optimize
-
-  echo "Starting Laravel scheduler ..."
-  php artisan schedule:work &
-
-  echo "Starting Laravel server ..."
+if [ "${RAILPACK_SKIP_MIGRATIONS}" != "true" ]; then
+  echo "Running migrations ..."
+  php artisan migrate --force
 fi
 
-# Start the FrankenPHP server
-docker-php-entrypoint --config /Caddyfile --adapter caddyfile 2>&1
+php artisan storage:link --force
+php artisan optimize:clear
+php artisan optimize
+
+echo "Starting Laravel scheduler ..."
+php artisan schedule:work &
+
+echo "Starting Laravel server ..."
+
+if [ -f /app/Caddyfile ]; then
+  exec docker-php-entrypoint --config /app/Caddyfile --adapter caddyfile
+fi
+
+exec docker-php-entrypoint --config /Caddyfile --adapter caddyfile
