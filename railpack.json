@@ -1,6 +1,9 @@
 {
-    "$schema": "https://schema.railpack.com",
-    "packages": {
-        "php": "8.4"
+    "$schema": "https://railpack.com/schema.json",
+    "php": {
+      "extensions": [
+        "intl",
+        "zip"
+      ]
     }
-}
+  }
