@@ -5,11 +5,11 @@
 @endsection
 
 @section('content')
-    <main class="md:h-screen h-full py-20 px-6">
-        <div class="w-full max-w-250 mx-auto space-y-10">
-            <div class="flex justify-between items-center">
-                <h1 class="text-secondary text-6xl font-extrabold">Budget history<span class="text-accent">.</span></h1>
-                <a href="{{ route("custom.index", ["budget" => $budget->id]) }}" class="text-butter bg-secondary px-5 py-2 font-bold rounded-2xl inline-block hover:text-secondary hover:bg-butter transition duration-700">Back to Budget</a>
+    <main class="h-full py-10 md:py-20 px-4 md:px-6">
+        <div class="w-full max-w-250 mx-auto space-y-8 md:space-y-10">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Budget history<span class="text-accent">.</span></h1>
+                <a href="{{ route("custom.index", ["budget" => $budget->id]) }}" class="text-butter bg-secondary px-5 py-2 font-bold rounded-2xl inline-block hover:text-secondary hover:bg-butter transition duration-700 shrink-0">Back to Budget</a>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

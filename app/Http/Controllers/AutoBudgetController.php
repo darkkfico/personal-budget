@@ -164,6 +164,58 @@ class AutoBudgetController extends Controller
         return redirect()->route('auto.index');
     }
 
+    public function convert(AutoBudgetEditRequest $request)
+    {
+        $customBudget = CustomBudget::where('user_id', Auth::id())->first();
+
+        if (!$customBudget) {
+            return back()->withErrors(['budget' => 'No custom budget to convert.']);
+        }
+
+        session()->forget('amount_left');
+        session()->forget('deleted_amount');
+        session()->forget('last_day');
+
+        $customBudget->delete();
+
+        $autoBudget = AutoBudget::create([
+            'user_id' => Auth::id(),
+            'budget_amount' => $request->budget,
+            'currency' => $request->currency,
+            'reset_date' => $request->reset_date,
+        ]);
+
+        $autoBudgetSnapshot = AutoBudgetSnapshot::create([
+            'user_id' => Auth::id(),
+            'budget_amount' => $request->budget,
+            'currency' => $request->currency,
+            'reset_date' => $request->reset_date,
+            'snapshot' => now(),
+            'month' => Carbon::now()->format('n'),
+        ]);
+
+        foreach (self::AUTO_FIELDS as $fieldName => $percentage) {
+            AutoBudgetField::create([
+                'auto_budget_id' => $autoBudget->id,
+                'field_name' => $fieldName,
+                'field_amount' => $request->budget * $percentage,
+            ]);
+
+            AutoBudgetFieldSnapshot::create([
+                'auto_budget_snapshot_id' => $autoBudgetSnapshot->id,
+                'field_name' => $fieldName,
+                'field_amount' => $request->budget * $percentage,
+                'snapshot' => now(),
+                'month' => Carbon::now()->format('n'),
+            ]);
+        }
+
+        session(['type' => 'auto']);
+        session(['budget_id' => $autoBudget->id]);
+
+        return redirect()->route('auto.index');
+    }
+
     public function history(AutoBudget $budget)
     {
         $budgetSnap = AutoBudgetSnapshot::with(['autoBudgetFieldSnapshots.autoBudgetItemSnapshots'])

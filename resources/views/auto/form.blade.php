@@ -5,14 +5,14 @@
 @endsection
 
 @section('content')
-    <main class="md:h-screen h-full py-20 px-6">
-        <div class="w-full max-w-250 mx-auto space-y-10">
+    <main class="md:h-screen h-full py-10 md:py-20 px-4 md:px-6">
+        <div class="w-full max-w-250 mx-auto space-y-8 md:space-y-10">
 
-            <h1 class="text-secondary text-6xl font-extrabold">Type the amount of your budget<span
+            <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Type the amount of your budget<span
                     class="text-accent">.</span>
             </h1>
             <form method="POST" action="{{ route('auto.create') }}"
-                class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-10 px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
+                class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-8 md:py-10 px-5 md:px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
                 @csrf
 
 

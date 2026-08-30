@@ -6,10 +6,10 @@
 
 @section('content')
 
-<main class="md:h-screen h-full py-20 px-6">
+<main class="md:h-screen h-full py-10 md:py-20 px-4 md:px-6">
     <div id="card"
-        class="w-full max-w-250 mx-auto inset-0 bg-butter/40 rounded-2xl animate-myanimation px-16 py-20 space-y-12 shadow-butter shadow-2xl hover:-translate-y-1 hover:shadow-3xl transition-all">
-        <h1 class="text-secondary text-6xl font-extrabold">Start your journey</h1>
+        class="w-full max-w-250 mx-auto inset-0 bg-butter/40 rounded-2xl animate-myanimation px-5 md:px-16 py-10 md:py-20 space-y-8 md:space-y-12 shadow-butter shadow-2xl hover:-translate-y-1 hover:shadow-3xl transition-all">
+        <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Start your journey</h1>
         <p class="text-butter font-bold bg-secondary rounded-full px-5 py-2 inline-block">Make a resolution</p>
         <ul class="bg-secondary rounded-2xl p-6 text-butter font-bold text-lg space-y-6">
             <li class="hover:scale-[102%] hover:translate-x-3 transition duration-300"><i

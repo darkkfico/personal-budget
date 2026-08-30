@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get("/auto/index", [AutoBudgetController::class, "index"])->name("auto.index");
     Route::get("/auto/{id}/change", [AutoBudgetController::class, "change"])->name("auto.change");
     Route::patch("/auto/{budget}/edit", [AutoBudgetController::class, "edit"])->name("auto.edit");
+    Route::patch("/auto/convert", [AutoBudgetController::class, "convert"])->name("auto.convert");
     Route::get("/auto/{budget}/history", [AutoBudgetController::class, "history"])->name("auto.history");
 
 

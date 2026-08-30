@@ -6,11 +6,11 @@
 
 
 @section('content')
-    <main class='md:h-screen h-full py-20 '>
-        <div class="w-full max-w-5xl mx-auto py-10 px-6 space-y-10">
-            <h1 class="text-secondary text-6xl font-extrabold">Select Your Type of budget<span class="text-accent">.</span></h1>
+    <main class='md:h-screen h-full py-10 md:py-20'>
+        <div class="w-full max-w-5xl mx-auto py-6 md:py-10 px-4 md:px-6 space-y-8 md:space-y-10">
+            <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Select Your Type of budget<span class="text-accent">.</span></h1>
             <form method="POST" action="{{ route('start.choose') }}"
-                class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-14 px-12 text-secondary text-xl font-bold rounded-2xl shadow-secondary shadow-2xl">
+                class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-10 md:py-14 px-5 md:px-12 text-secondary text-lg md:text-xl font-bold rounded-2xl shadow-secondary shadow-2xl">
                 @csrf
                 <div class="flex-col items-start w-full space-y-7 ">
                     <div class="flex justify-start items-center space-x-5">
@@ -20,7 +20,7 @@
                         </div>
                         <div class="relative group">
                             <i class="fa-solid fa-circle-info" id="autoInfoIcon"></i>
-                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-12.5 -top-5 -right-75 px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation"
+                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation z-20"
                                 id="autoInfo">
                                 <p><b>Let us make your monthly plan</b>. We will devide you budget in 3 sections. The first
                                     section
@@ -41,7 +41,7 @@
                         </div>
                         <div class="relative group">
                             <i class="fa-solid fa-circle-info" id="customInfoIcon"></i>
-                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-12.5 -top-5 -right-75 px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation"
+                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation z-20"
                                 id="customInfo">
                                 <p>We will let you make your own monthly plan <b>(devide your budget as you want)</b>, but
                                     be

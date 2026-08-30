@@ -5,8 +5,8 @@
 @section('content')
     <main class="min-h-screen flex items-center justify-center bg-linear-to-br from-secondary to-butter px-6 py-16">
         <div
-            class="flex flex-col items-center w-full max-w-xl bg-butter/60 hover:bg-butter shadow-2xl shadow-butter rounded-2xl animate-myanimation px-8 md:px-16 py-14 space-y-14 hover:-translate-y-1 hover:shadow-3xl transition-all">
-            <h2 class="text-secondary font-bold text-4xl">Log in</h2>
+            class="flex flex-col items-center w-full max-w-xl bg-butter/60 hover:bg-butter shadow-2xl shadow-butter rounded-2xl animate-myanimation px-5 md:px-16 py-10 md:py-14 space-y-10 md:space-y-14 hover:-translate-y-1 hover:shadow-3xl transition-all">
+            <h2 class="text-secondary font-bold text-3xl md:text-4xl">Log in</h2>
 
             <form action="{{ route("login") }}" method="POST" class="w-full flex flex-col items-center space-y-6">
                 @csrf
@@ -38,8 +38,8 @@
 
             </form>
 
-            <div class="w-full flex justify-between items-center">
-                <p class="text-secondary text-lg font-semibold">Don't have an account?</p>
+            <div class="w-full flex flex-col md:flex-row justify-between items-center gap-3">
+                <p class="text-secondary text-base md:text-lg font-semibold text-center md:text-left">Don't have an account?</p>
                 <a href="{{ route('auth.register') }}"
                     class="text-butter text-md bg-secondary border-secondary border-2 px-4 py-2 font-bold rounded-2xl inline-block hover:border-2 hover:border-secondary hover:bg-butter hover:text-secondary transition duration-700">
                     Register

@@ -79,7 +79,7 @@
     </style>
 </head>
 
-<body class="bg-linear-to-br from-secondary to-butter bg-fixed">
+<body class="bg-linear-to-br from-secondary to-butter bg-fixed overflow-x-hidden min-w-0">
 
     @yield('header')
 

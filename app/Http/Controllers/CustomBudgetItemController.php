@@ -46,11 +46,19 @@ class CustomBudgetItemController extends Controller
 
     public function edit(Request $request, CustomBudgetItem $item)
     {
-        $request->validate([
-            'item_amount' => ['required'],
-        ]);
+        if ($request->filled('adjust')) {
+            $request->validate([
+                'adjust' => ['numeric', 'not_in:0'],
+            ]);
+            $newAmount = max(0, (int) $item->item_amount + (int) $request->input('adjust'));
+        } else {
+            $request->validate([
+                'item_amount' => ['required', 'numeric', 'min:0'],
+            ]);
+            $newAmount = $request->item_amount;
+        }
 
-        $item->update(['item_amount' => $request->item_amount]);
+        $item->update(['item_amount' => $newAmount]);
 
         $item->refresh();
 
