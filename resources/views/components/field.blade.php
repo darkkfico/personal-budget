@@ -1,3 +1,6 @@
+@php
+    $isAuto = ($budgetType ?? session('type')) === 'auto';
+@endphp
 <div id='card'
     class='bg-butter/40 rounded-2xl animate-myanimation px-4 md:px-8 py-8 md:py-10 space-y-4 hover:-translate-y-1 transition-all w-full xl:max-w-[48%] min-w-0 h-fit self-start'>
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
@@ -21,7 +24,7 @@
     </div>
 
 
-    <form action="{{ session('type') == 'auto' ? route('auto.item.create') : route('custom.item.create')  }}" method="POST"
+    <form action="{{ $isAuto ? route('auto.item.create') : route('custom.item.create')  }}" method="POST"
         class="w-full flex flex-col items-center space-y-5 p-3 bg-butter/40 rounded-2xl relative">
         <input type="hidden" value="{{ $field }}" name="field">
         <div class="flex flex-col md:flex-row justify-center items-stretch md:items-center gap-4 w-full">
@@ -54,7 +57,7 @@
                                 <p class="text-xs text-secondary/70 mt-0.5">Created: {{ $item->created_at->format("d-m-Y") }}</p>
                             </div>
                             <div class="flex items-center gap-2 min-w-0">
-                                <form method="POST" action="{{ session('type') == 'auto' ? route('auto.item.edit', ["item" => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
+                                <form method="POST" action="{{ $isAuto ? route('auto.item.edit', ["item" => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
                                     class="flex items-center gap-2 min-w-0 flex-1">
                                     @csrf
                                     @method("PATCH")
@@ -66,7 +69,7 @@
                                     <button type="button"
                                         data-adjust-open
                                         data-direction="subtract"
-                                        data-action="{{ session('type') == 'auto' ? route('auto.item.edit', ['item' => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
+                                        data-action="{{ $isAuto ? route('auto.item.edit', ['item' => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
                                         data-item-name="{{ $item->item_name }}"
                                         data-current="{{ $item->item_amount }}"
                                         data-currency="{{ $budgetCurrency }}"
@@ -75,20 +78,21 @@
                                     <button type="button"
                                         data-adjust-open
                                         data-direction="add"
-                                        data-action="{{ session('type') == 'auto' ? route('auto.item.edit', ['item' => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
+                                        data-action="{{ $isAuto ? route('auto.item.edit', ['item' => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"
                                         data-item-name="{{ $item->item_name }}"
                                         data-current="{{ $item->item_amount }}"
                                         data-currency="{{ $budgetCurrency }}"
                                         class="flex items-center justify-center size-10 rounded-r-xl bg-secondary text-butter text-xl font-bold cursor-pointer leading-none border-l border-butter/40"
                                         aria-label="Add to amount">+</button>
                                 </div>
-                                <form action="{{ session('type') == 'auto' ? route('auto.item.delete', ["item" => $item->id]) : route('custom.item.delete', ["item" => $item->id]) }}" method="POST" class="shrink-0">
-                                    @csrf
-                                    @method("DELETE")
-                                    <button type="submit" class="flex items-center justify-center size-10 rounded-xl text-secondary cursor-pointer hover:bg-secondary/10 transition" aria-label="Delete item">
-                                        <i class="fa-regular fa-trash-can text-lg"></i>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                    data-delete-open
+                                    data-delete-action="{{ $isAuto ? route('auto.item.delete', ['item' => $item->id]) : route('custom.item.delete', ['item' => $item->id]) }}"
+                                    data-item-name="{{ $item->item_name }}"
+                                    class="flex items-center justify-center size-10 rounded-xl text-secondary cursor-pointer hover:bg-secondary/10 transition shrink-0"
+                                    aria-label="Delete item">
+                                    <i class="fa-regular fa-trash-can text-lg pointer-events-none"></i>
+                                </button>
                             </div>
                         </div>
                     @endif

@@ -58,7 +58,8 @@
         }
 
         .items-panel.open {
-            max-height: 500px;
+            max-height: 20rem;
+            overflow-y: auto;
         }
 
         .category-arrow {

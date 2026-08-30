@@ -9,6 +9,7 @@ class AutoBudgetItemSnapshot extends Model
 {
     protected $fillable = [
         'auto_budget_field_snapshot_id',
+        'auto_budget_item_id',
         'field_name',
         'item_name',
         'item_amount',

@@ -20,9 +20,12 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
 
-        User::create($request->only("name", "lastname", "email", "password"));
+        $user = User::create($request->only("name", "lastname", "email", "password"));
 
-        return redirect()->route("auth.login");
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route("start.start");
     }
     public function loginForm()
     {

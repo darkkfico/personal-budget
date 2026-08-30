@@ -2,7 +2,7 @@
     <div id="itemAdjustBackdrop" class="absolute inset-0 bg-secondary/50"></div>
     <div class="relative w-full max-w-sm bg-butter rounded-2xl shadow-2xl p-6 space-y-4" role="dialog" aria-modal="true" aria-labelledby="itemAdjustTitle">
         <h2 id="itemAdjustTitle" class="text-secondary text-xl font-extrabold"></h2>
-        <p id="itemAdjustHint" class="text-lightbutter text-sm font-semibold"></p>
+        <p id="itemAdjustHint" class="text-secondary text-sm font-semibold"></p>
         <form id="itemAdjustForm" method="POST" class="space-y-4">
             @csrf
             @method('PATCH')

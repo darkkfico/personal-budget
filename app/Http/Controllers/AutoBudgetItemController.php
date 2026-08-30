@@ -21,7 +21,7 @@ class AutoBudgetItemController extends Controller
             ->where('field_name', $request->input('field'))
             ->firstOrFail();
 
-        AutoBudgetItem::create([
+        $liveItem = AutoBudgetItem::create([
             'item_name' => $request->item,
             'auto_budget_field_id' => $field->id,
             'item_amount' => $request->amount ?? 0,
@@ -35,6 +35,7 @@ class AutoBudgetItemController extends Controller
         AutoBudgetItemSnapshot::create([
             'item_name' => $request->item,
             'auto_budget_field_snapshot_id' => $fieldSnapshot->id,
+            'auto_budget_item_id' => $liveItem->id,
             'item_amount' => $request->amount ?? 0,
             'field_name' => $field->field_name,
             'snapshot' => now(),
@@ -62,7 +63,7 @@ class AutoBudgetItemController extends Controller
 
         $item->refresh();
 
-        AutoBudgetItemSnapshot::find($item->id)?->update([
+        AutoBudgetItemSnapshot::where('auto_budget_item_id', $item->id)->update([
             'item_amount' => $item->item_amount,
             'snapshot' => now(),
             'month' => now()->format('n'),
@@ -71,9 +72,24 @@ class AutoBudgetItemController extends Controller
         return redirect()->route('auto.index');
     }
 
-    public function delete(AutoBudgetItem $item)
+    public function delete(Request $request, AutoBudgetItem $item)
     {
-        AutoBudgetItem::query()->whereKey($item->id)->delete();
+        $permanent = $request->boolean('permanent');
+
+        if ($permanent) {
+            AutoBudgetItemSnapshot::where('auto_budget_item_id', $item->id)->delete();
+
+            $fallback = AutoBudgetItemSnapshot::whereNull('auto_budget_item_id')
+                ->where('field_name', $item->field_name)
+                ->where('item_name', $item->item_name)
+                ->orderByDesc('id')
+                ->limit(1)
+                ->pluck('id');
+
+            AutoBudgetItemSnapshot::whereIn('id', $fallback)->delete();
+        }
+
+        $item->delete();
 
         return redirect()->route('auto.index');
     }

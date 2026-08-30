@@ -19,14 +19,13 @@ class ResetItemsAmountAutoBudget extends Command
      */
     public function handle()
     {
-        $today = (string) Carbon::now()->day;
+        $today = Carbon::now()->day;
 
-        AutoBudgetItem::whereIn(
-            'auto_budget_field_id',
-            AutoBudgetField::whereIn(
-                'auto_budget_id',
-                AutoBudget::where('reset_date', $today)->pluck('id')
-            )->pluck('id')
-        )->update(['item_amount' => 0]);
+        $fieldIds = AutoBudgetField::whereIn(
+            'auto_budget_id',
+            AutoBudget::where('reset_date', $today)->pluck('id')
+        )->where('field_name', '!=', 'Savings')->pluck('id');
+
+        AutoBudgetItem::whereIn('auto_budget_field_id', $fieldIds)->update(['item_amount' => 0]);
     }
 }

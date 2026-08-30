@@ -9,6 +9,8 @@ use App\Models\AutoBudgetFieldSnapshot;
 use App\Models\AutoBudgetField;
 use App\Models\AutoBudgetSnapshot;
 use App\Models\CustomBudget;
+use App\Services\BudgetHistoryService;
+use App\Services\ResetCarryoverService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -69,7 +71,7 @@ class AutoBudgetController extends Controller
         return redirect()->route('auto.index');
     }
 
-    public function index()
+    public function index(ResetCarryoverService $carryover)
     {
         $budget = AutoBudget::where('user_id', Auth::id())
             ->with(['autoBudgetItems', 'autoBudgetFields'])
@@ -78,7 +80,7 @@ class AutoBudgetController extends Controller
         $items = $budget->autoBudgetItems;
         $fields = $budget->autoBudgetFields;
 
-        session(['budget_id' => $budget->id]);
+        session(['budget_id' => $budget->id, 'type' => 'auto']);
 
         $givenDate = Carbon::createFromDate(now()->year, now()->month, $budget->reset_date);
 
@@ -88,7 +90,7 @@ class AutoBudgetController extends Controller
 
         $daysDiff = Carbon::now()->diffInDays($givenDate);
 
-        $items_amount = $items->sum('item_amount');
+        $items_amount = $items->where('field_name', '!=', 'Savings')->sum('item_amount');
 
         if ($budget->currency == 'MKD') {
             $sub1 = round((($budget->budget_amount * 0.8) - $items_amount) / $daysDiff);
@@ -116,7 +118,22 @@ class AutoBudgetController extends Controller
             session(['last_day' => Carbon::now()->day]);
         }
 
-        return view('auto.index', compact('budget', 'items', 'fields', 'daysDiff', 'sub1'));
+        $resetCarryover = $carryover->autoPrompt($budget);
+
+        return view('auto.index', compact('budget', 'items', 'fields', 'daysDiff', 'sub1', 'resetCarryover'));
+    }
+
+    public function applyResetCarryover(ResetCarryoverService $carryover)
+    {
+        $budget = AutoBudget::where('user_id', Auth::id())->firstOrFail();
+
+        $carryover->applyAuto($budget, request()->boolean('apply'));
+
+        session()->forget('amount_left');
+        session()->forget('deleted_amount');
+        session()->forget('last_day');
+
+        return redirect()->route('auto.index');
     }
 
     public function change($id)
@@ -136,6 +153,9 @@ class AutoBudgetController extends Controller
             'budget_amount' => $request->budget,
             'currency' => $request->currency,
             'reset_date' => $request->reset_date,
+            'reset_carry_answered_on' => (int) $budget->reset_date === (int) $request->reset_date
+                ? $budget->reset_carry_answered_on
+                : null,
         ]);
 
         $autoBudgetSnapshot = AutoBudgetSnapshot::create([
@@ -216,14 +236,25 @@ class AutoBudgetController extends Controller
         return redirect()->route('auto.index');
     }
 
-    public function history(AutoBudget $budget)
+    public function history(AutoBudget $budget, BudgetHistoryService $history)
     {
-        $budgetSnap = AutoBudgetSnapshot::with(['autoBudgetFieldSnapshots.autoBudgetItemSnapshots'])
-            ->where('user_id', $budget->user_id)
-            ->orderBy('snapshot', 'desc')
-            ->get()
-            ->groupBy(fn ($snap) => Carbon::createFromDate(null, $snap->month, 1)->format('F Y'));
+        abort_unless($budget->user_id === Auth::id(), 403);
 
-        return view('auto.history', compact('budgetSnap', 'budget'));
+        ['months' => $months, 'chartMonths' => $chartMonths] = $history->summarizeAuto($budget->user_id);
+
+        return view('auto.history', compact('budget', 'months', 'chartMonths'));
+    }
+
+    public function historyItems(AutoBudget $budget, BudgetHistoryService $history)
+    {
+        abort_unless($budget->user_id === Auth::id(), 403);
+
+        return response()->json(
+            $history->itemsAuto(
+                $budget->user_id,
+                (string) request('month'),
+                (string) request('field')
+            )
+        );
     }
 }

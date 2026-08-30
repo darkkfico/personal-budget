@@ -41,9 +41,11 @@ Route::middleware('auth')->group(function () {
     Route::get("/auto", [AutoBudgetController::class, "form"])->name("auto.form");
     Route::post("/auto/store", [AutoBudgetController::class, "create"])->name("auto.create");
     Route::get("/auto/index", [AutoBudgetController::class, "index"])->name("auto.index");
+    Route::post("/auto/reset-carryover", [AutoBudgetController::class, "applyResetCarryover"])->name("auto.resetCarryover");
     Route::get("/auto/{id}/change", [AutoBudgetController::class, "change"])->name("auto.change");
     Route::patch("/auto/{budget}/edit", [AutoBudgetController::class, "edit"])->name("auto.edit");
     Route::patch("/auto/convert", [AutoBudgetController::class, "convert"])->name("auto.convert");
+    Route::get("/auto/{budget}/history/items", [AutoBudgetController::class, "historyItems"])->name("auto.history.items");
     Route::get("/auto/{budget}/history", [AutoBudgetController::class, "history"])->name("auto.history");
 
 
@@ -53,8 +55,10 @@ Route::middleware('auth')->group(function () {
     Route::get("/custom/nonResetable", [CustomBudgetController::class, "nonResetable"])->name("custom.formNonResetable");
     Route::post("/custom/store/nonResetable", [CustomBudgetController::class, "storeNonResetable"])->name("custom.nonResetable");
     Route::get("/custom/index", [CustomBudgetController::class, "index"])->name("custom.index");
+    Route::post("/custom/reset-carryover", [CustomBudgetController::class, "applyResetCarryover"])->name("custom.resetCarryover");
     Route::get("/custom/change", [CustomBudgetController::class, "change"])->name("custom.change");
     Route::patch("/custom/edit", [CustomBudgetController::class, "edit"])->name("custom.edit");
+    Route::get("/custom/{budget}/history/items", [CustomBudgetController::class, "historyItems"])->name("custom.history.items");
     Route::get("/custom/{budget}/history", [CustomBudgetController::class, "history"])->name("custom.history");
 
 

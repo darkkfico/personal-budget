@@ -8,8 +8,11 @@
     <main class="md:h-screen h-full py-10 md:py-20 px-4 md:px-6">
         <div class="w-full max-w-250 mx-auto space-y-8 md:space-y-10">
 
-            <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Type the amount of your budget<span class="text-accent">.</span>
-            </h1>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Type the amount of your budget<span class="text-accent">.</span>
+                </h1>
+                <a href="{{ route('auto.index') }}" class="text-butter bg-secondary px-5 py-2 font-bold rounded-2xl inline-block hover:text-secondary hover:bg-butter transition duration-700 shrink-0">Back to Budget</a>
+            </div>
             <form method="POST" action="{{ route('auto.edit', ["budget" => $id]) }}"
                 class="w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-8 md:py-10 px-5 md:px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
                 @csrf

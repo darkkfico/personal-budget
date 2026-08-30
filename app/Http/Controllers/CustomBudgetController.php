@@ -10,6 +10,8 @@ use App\Models\CustomBudgetItem;
 use App\Models\CustomBudgetItemSnapshot;
 use App\Models\CustomBudgetField;
 use App\Models\CustomBudgetSnapshot;
+use App\Services\BudgetHistoryService;
+use App\Services\ResetCarryoverService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -118,13 +120,13 @@ class CustomBudgetController extends Controller
         }
     }
 
-    public function index()
+    public function index(ResetCarryoverService $carryover)
     {
         $budget = CustomBudget::where("user_id", Auth::id())->first();
         $items = $budget->customBudgetItems;
         $fields = CustomBudgetField::where('custom_budget_id', $budget->id)->get();
 
-        session(['budget_id' => $budget->id]);
+        session(['budget_id' => $budget->id, 'type' => 'custom']);
 
         $givenDate = Carbon::createFromDate(now()->year, now()->month, $budget->reset_date);
 
@@ -134,7 +136,10 @@ class CustomBudgetController extends Controller
 
         $daysDiff = Carbon::now()->diffInDays($givenDate);
 
-        $items_amount = $items->sum("item_amount");
+        $nonResetableFieldIds = CustomBudgetFieldNonResetable::whereIn('custom_budget_field_id', $fields->pluck('id'))
+            ->pluck('custom_budget_field_id');
+
+        $items_amount = $items->whereNotIn('custom_budget_field_id', $nonResetableFieldIds)->sum('item_amount');
 
         if($budget->currency == "MKD"){
             $sub1 = round(($budget->budget_amount - $items_amount) / $daysDiff);
@@ -162,7 +167,22 @@ class CustomBudgetController extends Controller
             session(['last_day' => Carbon::now()->day]);
         }
 
-        return view("custom.index", compact("items", "budget", "fields", "daysDiff", "sub1"));
+        $resetCarryover = $carryover->customPrompt($budget);
+
+        return view("custom.index", compact("items", "budget", "fields", "daysDiff", "sub1", "resetCarryover"));
+    }
+
+    public function applyResetCarryover(ResetCarryoverService $carryover)
+    {
+        $budget = CustomBudget::where("user_id", Auth::id())->firstOrFail();
+
+        $carryover->applyCustom($budget, request()->boolean("apply"));
+
+        session()->forget("amount_left");
+        session()->forget("deleted_amount");
+        session()->forget("last_day");
+
+        return redirect()->route("custom.index");
     }
 
     public function change()
@@ -230,7 +250,10 @@ class CustomBudgetController extends Controller
         $customBudget->update([
             'budget_amount' => $request->budget,
             'currency' => $request->currency,
-            'reset_date' => $request->reset_date
+            'reset_date' => $request->reset_date,
+            'reset_carry_answered_on' => (int) $customBudget->reset_date === (int) $request->reset_date
+                ? $customBudget->reset_carry_answered_on
+                : null,
         ]);
 
         if ($customBudgetSnapshot) {
@@ -302,10 +325,25 @@ class CustomBudgetController extends Controller
         return redirect()->route("custom.index");
     }
 
-    public function history(CustomBudget $budget){
+    public function history(CustomBudget $budget, BudgetHistoryService $history)
+    {
+        abort_unless($budget->user_id === Auth::id(), 403);
 
-        $budgetSnap = CustomBudgetSnapshot::with(['customBudgetFieldSnapshots.customBudgetItemSnapshots'])->where('user_id', $budget->user_id)->orderBy('snapshot', 'desc')->get()->groupBy(fn ($snap) => Carbon::createFromDate(null, $snap->month, 1)->format('F Y'));
-        
-        return view("custom.history", compact("budgetSnap", "budget"));
+        ['months' => $months, 'chartMonths' => $chartMonths] = $history->summarizeCustom($budget->user_id);
+
+        return view('custom.history', compact('budget', 'months', 'chartMonths'));
+    }
+
+    public function historyItems(CustomBudget $budget, BudgetHistoryService $history)
+    {
+        abort_unless($budget->user_id === Auth::id(), 403);
+
+        return response()->json(
+            $history->itemsCustom(
+                $budget->user_id,
+                (string) request("month"),
+                (string) request("field")
+            )
+        );
     }
 }

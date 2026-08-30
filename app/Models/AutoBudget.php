@@ -11,7 +11,15 @@ class AutoBudget extends Model
         'budget_amount',
         'currency',
         'reset_date',
+        'reset_carry_answered_on',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'reset_carry_answered_on' => 'date',
+        ];
+    }
 
     public function autoBudgetFields()
     {

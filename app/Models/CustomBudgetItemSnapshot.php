@@ -9,6 +9,7 @@ class CustomBudgetItemSnapshot extends Model
 {
     protected $fillable = [
         'custom_budget_field_snapshot_id',
+        'custom_budget_item_id',
         'field_name',
         'item_name',
         'item_amount',

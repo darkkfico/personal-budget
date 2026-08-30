@@ -21,7 +21,7 @@ class CustomBudgetItemController extends Controller
             ->where('field_name', $request->input('field'))
             ->firstOrFail();
 
-        CustomBudgetItem::create([
+        $liveItem = CustomBudgetItem::create([
             'item_name' => $request->item,
             'custom_budget_field_id' => $field->id,
             'item_amount' => $request->amount ?? 0,
@@ -35,6 +35,7 @@ class CustomBudgetItemController extends Controller
         CustomBudgetItemSnapshot::create([
             'item_name' => $request->item,
             'custom_budget_field_snapshot_id' => $fieldSnapshot->id,
+            'custom_budget_item_id' => $liveItem->id,
             'item_amount' => $request->amount ?? 0,
             'field_name' => $field->field_name,
             'snapshot' => now(),
@@ -62,7 +63,7 @@ class CustomBudgetItemController extends Controller
 
         $item->refresh();
 
-        CustomBudgetItemSnapshot::find($item->id)?->update([
+        CustomBudgetItemSnapshot::where('custom_budget_item_id', $item->id)->update([
             'item_amount' => $item->item_amount,
             'snapshot' => now(),
             'month' => now()->format('n'),
@@ -71,9 +72,24 @@ class CustomBudgetItemController extends Controller
         return redirect()->route('custom.index');
     }
 
-    public function delete(CustomBudgetItem $item)
+    public function delete(Request $request, CustomBudgetItem $item)
     {
-        CustomBudgetItem::query()->whereKey($item->id)->delete();
+        $permanent = $request->boolean('permanent');
+
+        if ($permanent) {
+            CustomBudgetItemSnapshot::where('custom_budget_item_id', $item->id)->delete();
+
+            $fallback = CustomBudgetItemSnapshot::whereNull('custom_budget_item_id')
+                ->where('field_name', $item->field_name)
+                ->where('item_name', $item->item_name)
+                ->orderByDesc('id')
+                ->limit(1)
+                ->pluck('id');
+
+            CustomBudgetItemSnapshot::whereIn('id', $fallback)->delete();
+        }
+
+        $item->delete();
 
         return redirect()->route('custom.index');
     }

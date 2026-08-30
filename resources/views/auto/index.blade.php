@@ -25,11 +25,15 @@
                 @foreach($fields as $field)
                     <x-field field="{{ $field->field_name }}" budgetAmount="{{ $budget->budget_amount }}"
                         fieldAmount="{{ $field->field_amount }}" budgetCurrency="{{ $budget->currency }}"
+                        budgetType="auto"
                         :items="$items ?? collect()"></x-field>
                 @endforeach
             </div>
         </div>
     </main>
     <x-item-adjust-popup></x-item-adjust-popup>
+    <x-item-delete-popup></x-item-delete-popup>
+    <x-reset-carryover-popup :prompt="$resetCarryover" :action="route('auto.resetCarryover')" />
     <script src="{{ asset('js/item-adjust.js') }}"></script>
+    <script src="{{ asset('js/item-delete.js') }}"></script>
 @endsection
