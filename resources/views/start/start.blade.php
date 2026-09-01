@@ -19,8 +19,8 @@
                             <label for='auto' id="autoLabel">Auto</label>
                         </div>
                         <div class="relative group">
-                            <i class="fa-solid fa-circle-info" id="autoInfoIcon"></i>
-                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation z-20"
+                            <i class="fa-solid fa-circle-info cursor-pointer" id="autoInfoIcon" role="button" tabindex="0" aria-expanded="false" aria-controls="autoInfo"></i>
+                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl max-md:group-hover:inline-block animate-myanimation z-20"
                                 id="autoInfo">
                                 <p><b>Let us make your monthly plan</b>. We will devide you budget in 3 sections. The first
                                     section
@@ -40,8 +40,8 @@
                             <label for="custom">Custom</label>
                         </div>
                         <div class="relative group">
-                            <i class="fa-solid fa-circle-info" id="customInfoIcon"></i>
-                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl group-hover:inline-block animate-myanimation z-20"
+                            <i class="fa-solid fa-circle-info cursor-pointer" id="customInfoIcon" role="button" tabindex="0" aria-expanded="false" aria-controls="customInfo"></i>
+                            <div class="hidden absolute bg-butter text-secondary text-sm font-light left-0 md:left-12.5 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl max-md:group-hover:inline-block animate-myanimation z-20"
                                 id="customInfo">
                                 <p>We will let you make your own monthly plan <b>(devide your budget as you want)</b>, but
                                     be
@@ -61,4 +61,6 @@
             </form>
         </div>
     </main>
+
+    <script src="{{ asset('js/budget-type-info.js') }}"></script>
 @endsection
