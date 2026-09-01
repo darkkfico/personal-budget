@@ -7,6 +7,7 @@ use App\Models\AutoBudgetFieldSnapshot;
 use App\Models\AutoBudgetItem;
 use App\Models\AutoBudgetItemSnapshot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AutoBudgetItemController extends Controller
 {
@@ -28,7 +29,9 @@ class AutoBudgetItemController extends Controller
             'field_name' => $field->field_name,
         ]);
 
-        $fieldSnapshot = AutoBudgetFieldSnapshot::where('field_name', $field->field_name)
+        $fieldSnapshot = AutoBudgetFieldSnapshot::query()
+            ->where('field_name', $field->field_name)
+            ->whereHas('autoBudgetSnapshot', fn ($query) => $query->where('user_id', Auth::id()))
             ->latest('id')
             ->firstOrFail();
 

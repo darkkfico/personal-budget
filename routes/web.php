@@ -7,6 +7,7 @@ use App\Http\Controllers\CustomBudgetController;
 use App\Http\Controllers\CustomBudgetItemController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TypeOfBudgetController;
+use App\Services\DailyAllowenceService;
 use Illuminate\Support\Facades\Route;
 
 
@@ -28,6 +29,8 @@ Route::get("/logout", [AuthController::class, "logout"])->name("auth.logout");
 
 Route::middleware('auth')->group(function () {
 
+    Route::delete("/account", [AuthController::class, "destroy"])->name("auth.destroy");
+
     // dashboard
     Route::get("/dashboard", [HomeController::class, "dashboard"])->name("start.dashboard");
 
@@ -41,11 +44,15 @@ Route::middleware('auth')->group(function () {
     Route::get("/auto", [AutoBudgetController::class, "form"])->name("auto.form");
     Route::post("/auto/store", [AutoBudgetController::class, "create"])->name("auto.create");
     Route::get("/auto/index", [AutoBudgetController::class, "index"])->name("auto.index");
+    Route::post("/daily-allowence", function (DailyAllowenceService $allowence) {
+        $allowence->acknowledgeWarning();
+
+        return back();
+    })->name("dailyAllowence.acknowledge");
     Route::post("/auto/reset-carryover", [AutoBudgetController::class, "applyResetCarryover"])->name("auto.resetCarryover");
     Route::get("/auto/{id}/change", [AutoBudgetController::class, "change"])->name("auto.change");
     Route::patch("/auto/{budget}/edit", [AutoBudgetController::class, "edit"])->name("auto.edit");
     Route::patch("/auto/convert", [AutoBudgetController::class, "convert"])->name("auto.convert");
-    Route::get("/auto/{budget}/history/items", [AutoBudgetController::class, "historyItems"])->name("auto.history.items");
     Route::get("/auto/{budget}/history", [AutoBudgetController::class, "history"])->name("auto.history");
 
 
@@ -58,7 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::post("/custom/reset-carryover", [CustomBudgetController::class, "applyResetCarryover"])->name("custom.resetCarryover");
     Route::get("/custom/change", [CustomBudgetController::class, "change"])->name("custom.change");
     Route::patch("/custom/edit", [CustomBudgetController::class, "edit"])->name("custom.edit");
-    Route::get("/custom/{budget}/history/items", [CustomBudgetController::class, "historyItems"])->name("custom.history.items");
+    Route::patch("/custom/convert", [CustomBudgetController::class, "convertFromAuto"])->name("custom.convert");
     Route::get("/custom/{budget}/history", [CustomBudgetController::class, "history"])->name("custom.history");
 
 

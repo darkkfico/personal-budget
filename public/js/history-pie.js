@@ -10,26 +10,27 @@
     }
 
     const months = JSON.parse(dataEl.textContent);
-    const colors = ["#004d40", "#00796b", "#ff6f00", "#2e7d32", "#558b2f", "#00695c", "#ef6c00", "#33691e"];
+    const spentColors = ["#004d40", "#00796b", "#ff6f00", "#2e7d32", "#558b2f", "#00695c", "#ef6c00", "#33691e"];
+    const leftoverColor = "#80cbc4";
 
     function formatAmount(value, currency) {
         return `${value} ${currency}`;
     }
 
-    function conicGradient(values) {
-        const total = values.reduce((sum, value) => sum + Number(value), 0);
+    function conicGradient(slices) {
+        const total = slices.reduce((sum, slice) => sum + Number(slice.value), 0);
 
         if (total <= 0) {
-            return "#b2dfdb";
+            return leftoverColor;
         }
 
         let start = 0;
 
-        return values
-            .map((value, index) => {
-                const slice = (Number(value) / total) * 360;
-                const end = start + slice;
-                const stop = `${colors[index % colors.length]} ${start}deg ${end}deg`;
+        return slices
+            .map((slice) => {
+                const span = (Number(slice.value) / total) * 360;
+                const end = start + span;
+                const stop = `${slice.color} ${start}deg ${end}deg`;
                 start = end;
                 return stop;
             })
@@ -43,9 +44,24 @@
             return;
         }
 
-        const values = month.sections.map((section) => Number(section.spent));
+        const leftover = Math.max(0, Number(month.left));
+        const slices = month.sections
+            .map((section, index) => ({
+                name: section.name,
+                value: Number(section.spent),
+                color: spentColors[index % spentColors.length],
+            }))
+            .filter((slice) => slice.value > 0);
 
-        pieEl.style.background = `conic-gradient(${conicGradient(values)})`;
+        if (leftover > 0) {
+            slices.push({
+                name: "Not spent",
+                value: leftover,
+                color: leftoverColor,
+            });
+        }
+
+        pieEl.style.background = `conic-gradient(${conicGradient(slices)})`;
 
         summaryEl.innerHTML = `
             <span>Budget: ${formatAmount(month.budget, month.currency)}</span>
@@ -53,22 +69,36 @@
             <span>Left at month end: ${formatAmount(month.left, month.currency)}</span>
         `;
 
-        legendEl.innerHTML = month.sections
+        const fieldLegend = month.sections
             .map((section, index) => {
-                const leftover = Number(section.allocated) - Number(section.spent);
+                const fieldLeft = Number(section.allocated) - Number(section.spent);
                 return `
                     <li class="flex items-start gap-3 bg-lightbutter/60 rounded-xl px-4 py-3">
-                        <span class="mt-1 size-3 rounded-full shrink-0" style="background:${colors[index % colors.length]}"></span>
+                        <span class="mt-1 size-3 rounded-full shrink-0" style="background:${spentColors[index % spentColors.length]}"></span>
                         <div class="min-w-0 text-sm text-secondary">
                             <p class="font-bold">${section.name}</p>
                             <p>Allocated: ${formatAmount(section.allocated, month.currency)}</p>
                             <p>Spent: ${formatAmount(section.spent, month.currency)}</p>
-                            <p>Left: ${formatAmount(leftover, month.currency)}</p>
+                            <p>Left: ${formatAmount(fieldLeft, month.currency)}</p>
                         </div>
                     </li>
                 `;
             })
             .join("");
+
+        const leftoverLegend = leftover > 0
+            ? `
+                <li class="flex items-start gap-3 bg-lightbutter/60 rounded-xl px-4 py-3">
+                    <span class="mt-1 size-3 rounded-full shrink-0" style="background:${leftoverColor}"></span>
+                    <div class="min-w-0 text-sm text-secondary">
+                        <p class="font-bold">Not spent</p>
+                        <p>Left: ${formatAmount(leftover, month.currency)}</p>
+                    </div>
+                </li>
+            `
+            : "";
+
+        legendEl.innerHTML = fieldLegend + leftoverLegend;
     }
 
     monthSelect.addEventListener("change", () => render(monthSelect.value));

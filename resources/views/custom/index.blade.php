@@ -34,6 +34,7 @@
     </main>
     <x-item-adjust-popup></x-item-adjust-popup>
     <x-item-delete-popup></x-item-delete-popup>
+    <x-daily-allowence-popup :show="$warnDaily && ! $resetCarryover" :amount="$sub1" :currency="$budget->currency" />
     <x-reset-carryover-popup :prompt="$resetCarryover" :action="route('custom.resetCarryover')" />
     <script src="{{ asset('js/item-adjust.js') }}"></script>
     <script src="{{ asset('js/item-delete.js') }}"></script>

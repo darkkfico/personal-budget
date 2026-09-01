@@ -54,7 +54,7 @@
                         <div class="w-full min-w-0 bg-butter/40 rounded-2xl p-4 space-y-3">
                             <div class="min-w-0">
                                 <p class="text-secondary text-base md:text-lg font-bold break-words">{{ $item->item_name }}</p>
-                                <p class="text-xs text-secondary/70 mt-0.5">Created: {{ $item->created_at->format("d-m-Y") }}</p>
+                                <p class="text-xs text-secondary/70 mt-0.5">Created: {{ $item->created_at->format("d-m-Y") }} · Updated: {{ $item->updated_at->format("d-m-Y") }}</p>
                             </div>
                             <div class="flex items-center gap-2 min-w-0">
                                 <form method="POST" action="{{ $isAuto ? route('auto.item.edit', ["item" => $item->id]) : route('custom.item.edit', ['item' => $item->id]) }}"

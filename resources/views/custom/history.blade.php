@@ -13,7 +13,7 @@
             </div>
 
             <x-history-pie-chart :chartMonths="$chartMonths" />
-            <x-history-month-cards :months="$months" :itemsUrl="route('custom.history.items', $budget)" />
+            <x-history-month-cards :months="$months" />
         </div>
     </main>
 

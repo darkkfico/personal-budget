@@ -10,6 +10,8 @@ use App\Models\AutoBudgetField;
 use App\Models\AutoBudgetSnapshot;
 use App\Models\CustomBudget;
 use App\Services\BudgetHistoryService;
+use App\Services\DailyAllowenceService;
+use App\Services\OnboardingService;
 use App\Services\ResetCarryoverService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -23,17 +25,25 @@ class AutoBudgetController extends Controller
         'Savings' => 0.20,
     ];
 
-    public function form()
+    public function form(OnboardingService $onboarding)
     {
+        $user = Auth::user();
+
+        if (AutoBudget::where('user_id', $user->id)->exists() || CustomBudget::where('user_id', $user->id)->exists()) {
+            return $onboarding->redirect($user);
+        }
+
+        $onboarding->mark($user, OnboardingService::AUTO_FORM);
+
         $currencies = Storage::json('currencies.json');
 
         return view('auto.form', compact('currencies'));
     }
 
-    public function create(AutoBudgetCreateRequest $request)
+    public function create(AutoBudgetCreateRequest $request, OnboardingService $onboarding)
     {
         if (AutoBudget::where('user_id', Auth::id())->exists() || CustomBudget::where('user_id', Auth::id())->exists()) {
-            return back()->withErrors(['exists' => 'This user exists!']);
+            return $onboarding->redirect(Auth::user());
         }
 
         $autoBudget = AutoBudget::create([
@@ -68,86 +78,57 @@ class AutoBudgetController extends Controller
             ]);
         }
 
+        $onboarding->mark(Auth::user(), OnboardingService::COMPLETE);
+
         return redirect()->route('auto.index');
     }
 
-    public function index(ResetCarryoverService $carryover)
+    public function index(ResetCarryoverService $carryover, DailyAllowenceService $allowence, OnboardingService $onboarding)
     {
         $budget = AutoBudget::where('user_id', Auth::id())
             ->with(['autoBudgetItems', 'autoBudgetFields'])
             ->first();
+
+        if (! $budget) {
+            return $onboarding->redirect(Auth::user());
+        }
 
         $items = $budget->autoBudgetItems;
         $fields = $budget->autoBudgetFields;
 
         session(['budget_id' => $budget->id, 'type' => 'auto']);
 
-        $givenDate = Carbon::createFromDate(now()->year, now()->month, $budget->reset_date);
-
-        if ($givenDate->isPast()) {
-            $givenDate->addMonth();
-        }
-
-        $daysDiff = Carbon::now()->diffInDays($givenDate);
-
-        $items_amount = $items->where('field_name', '!=', 'Savings')->sum('item_amount');
-
-        if ($budget->currency == 'MKD') {
-            $sub1 = round((($budget->budget_amount * 0.8) - $items_amount) / $daysDiff);
-        } else {
-            $sub1 = round((($budget->budget_amount * 0.8) - $items_amount) / $daysDiff, 2);
-        }
-
-        if (session('amount_left')) {
-            if (session('deleted_amount')) {
-                session(['amount_left' => (session('amount_left') + session('deleted_amount'))]);
-                session()->forget('deleted_amount');
-                $sub1 = session('amount_left') - $items_amount;
-            } elseif (session('last_day')) {
-                if (session('last_day') != Carbon::now()->day) {
-                    session(['last_day' => Carbon::now()->day]);
-                    $todaysAmount = $items_amount + session('amount_left');
-                    session(['amount_left' => $todaysAmount]);
-                    $sub1 = session('amount_left') - $items_amount;
-                } else {
-                    $sub1 = session('amount_left') - $items_amount;
-                }
-            }
-        } else {
-            session(['amount_left' => $sub1]);
-            session(['last_day' => Carbon::now()->day]);
-        }
+        ['sub1' => $sub1, 'daysDiff' => $daysDiff, 'warnDaily' => $warnDaily] = $allowence->forAuto($budget, $items);
 
         $resetCarryover = $carryover->autoPrompt($budget);
 
-        return view('auto.index', compact('budget', 'items', 'fields', 'daysDiff', 'sub1', 'resetCarryover'));
+        return view('auto.index', compact('budget', 'items', 'fields', 'daysDiff', 'sub1', 'resetCarryover', 'warnDaily'));
     }
 
-    public function applyResetCarryover(ResetCarryoverService $carryover)
+    public function applyResetCarryover(ResetCarryoverService $carryover, DailyAllowenceService $allowence)
     {
         $budget = AutoBudget::where('user_id', Auth::id())->firstOrFail();
 
         $carryover->applyAuto($budget, request()->boolean('apply'));
 
-        session()->forget('amount_left');
-        session()->forget('deleted_amount');
-        session()->forget('last_day');
+        $allowence->clear();
 
         return redirect()->route('auto.index');
     }
 
     public function change($id)
     {
+        $budget = AutoBudget::where('user_id', Auth::id())->findOrFail($id);
         $currencies = Storage::json('currencies.json');
+        $fields = AutoBudgetField::where('auto_budget_id', $budget->id)->orderBy('id')->get();
+        $budgetAmount = $budget->budget_amount;
 
-        return view('auto.change', compact('currencies', 'id'));
+        return view('auto.change', compact('currencies', 'id', 'fields', 'budgetAmount', 'budget'));
     }
 
-    public function edit(AutoBudgetEditRequest $request, AutoBudget $budget)
+    public function edit(AutoBudgetEditRequest $request, AutoBudget $budget, DailyAllowenceService $allowence)
     {
-        session()->forget('amount_left');
-        session()->forget('deleted_amount');
-        session()->forget('last_day');
+        $allowence->clear();
 
         $budget->update([
             'budget_amount' => $request->budget,
@@ -184,7 +165,7 @@ class AutoBudgetController extends Controller
         return redirect()->route('auto.index');
     }
 
-    public function convert(AutoBudgetEditRequest $request)
+    public function convert(AutoBudgetEditRequest $request, DailyAllowenceService $allowence)
     {
         $customBudget = CustomBudget::where('user_id', Auth::id())->first();
 
@@ -192,9 +173,7 @@ class AutoBudgetController extends Controller
             return back()->withErrors(['budget' => 'No custom budget to convert.']);
         }
 
-        session()->forget('amount_left');
-        session()->forget('deleted_amount');
-        session()->forget('last_day');
+        $allowence->clear();
 
         $customBudget->delete();
 
@@ -243,18 +222,5 @@ class AutoBudgetController extends Controller
         ['months' => $months, 'chartMonths' => $chartMonths] = $history->summarizeAuto($budget->user_id);
 
         return view('auto.history', compact('budget', 'months', 'chartMonths'));
-    }
-
-    public function historyItems(AutoBudget $budget, BudgetHistoryService $history)
-    {
-        abort_unless($budget->user_id === Auth::id(), 403);
-
-        return response()->json(
-            $history->itemsAuto(
-                $budget->user_id,
-                (string) request('month'),
-                (string) request('field')
-            )
-        );
     }
 }

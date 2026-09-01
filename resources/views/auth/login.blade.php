@@ -10,12 +10,16 @@
 
             <form action="{{ route("login") }}" method="POST" class="w-full flex flex-col items-center space-y-6">
                 @csrf
+                @if ($errors->any())
+                    <ul class="w-full space-y-1 text-sm font-semibold text-red-600">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                @endif
                 <div class="relative w-full">
                     <input type="text" name="email" placeholder="example@gmail.com" value="{{ old('email', session('email')) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary">
-                    @error("email")
-                    <span class="px-2 py-0.5 text-md text-red-600 absolute top-12 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div class="relative w-full">

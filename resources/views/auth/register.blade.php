@@ -12,28 +12,27 @@
             <form action="{{ route('auth.store') }}" method="POST" class="w-full flex flex-col items-center space-y-6">
                 @csrf
 
+                @if ($errors->any())
+                    <ul class="w-full space-y-1 text-sm font-semibold text-red-600">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+
                 <div class="w-full relative">
                     <input type="text" name="name" placeholder="Name" value="{{ old('name', session('name')) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary">
-                    @error('name')
-                        <span class="px-2 py-0.5 text-md text-red-600 absolute top-12 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="w-full relative">
                     <input type="text" name="lastname" placeholder="Last Name"
                         value="{{ old('lastname', session('lastname')) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary">
-                    @error('lastname')
-                        <span class="px-2 py-0.5 text-md text-red-600 absolute top-12 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="w-full relative">
                     <input type="text" name="email" placeholder="example@gmail.com"
                         value="{{ old('email', session('email')) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary">
-                    @error('email')
-                        <span class="px-2 py-0.5 text-md text-red-600 absolute top-12 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div class="w-full relative">
@@ -43,18 +42,10 @@
                     <i class="fa-solid fa-eye-slash absolute top-5 right-2 text-md text-secondary cursor-pointer"
                         id="passwordSee"></i>
 
-                    @error('password')
-                        <span class="px-2 py-0.5 text-md text-red-600 absolute top-12 left-1">{{ $message }}</span>
-                    @enderror
-
                     <input type="password" name="password_confirmation" id="passwordC" placeholder="Confirm Password"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md focus:scale-[102%] mt-6 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:secondary">
                     <i class="fa-solid fa-eye-slash absolute top-23 right-2 text-md text-secondary cursor-pointer"
                         id="passwordCSee"></i>
-
-                    @error('password_confirmation')
-                        <span class="px-2 py-0.5 text-md text-red-600 absolute top-full left-1">{{ $message }}</span>
-                    @enderror
 
                 </div>
 

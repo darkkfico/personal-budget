@@ -15,35 +15,41 @@
 
             <x-budget-type-toggle current="custom" />
 
+            @php
+                $customFormSubmitted = collect(old())->keys()->contains(
+                    fn ($key) => str_starts_with((string) $key, 'custom-field')
+                );
+            @endphp
+
             <form method="POST" action="{{ route('auto.convert') }}" id="autoChangeForm"
                 class="hidden w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-8 md:py-10 px-5 md:px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
                 @csrf
                 @method('PATCH')
+                @if ($errors->any() && ! $customFormSubmitted)
+                    <ul class="w-full space-y-1 text-sm font-semibold text-red-600">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                @endif
                 <div class="relative w-full">
                     <input type="number" placeholder="Your budget" name="budget"
+                        value="{{ old('budget', $budget->budget_amount) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
-                    @error('budget')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="relative w-full">
                     <input type="number" placeholder="Reset date" name="reset_date"
+                        value="{{ old('reset_date', $budget->reset_date) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
-                    @error('reset_date')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="relative w-full">
                     <select name="currency"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
                         <option value="select">Select currency</option>
                         @foreach ($currencies as $currency)
-                            <option value="{{ $currency['code'] }}">{{ $currency['name'] }} ({{ $currency['code'] }})</option>
+                            <option value="{{ $currency['code'] }}" @selected(old('currency', $budget->currency) === $currency['code'])>{{ $currency['name'] }} ({{ $currency['code'] }})</option>
                         @endforeach
                     </select>
-                    @error('currency')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="flex justify-center items-center">
                     <div class="group inline-block space-x-3">
@@ -60,12 +66,17 @@
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="budget_id" value="{{ $id }}">
+                @if ($errors->any() && $customFormSubmitted)
+                    <ul class="w-full space-y-1 text-sm font-semibold text-red-600">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                @endif
                 <div class="w-full relative">
                     <input type="number" placeholder="Your budget" name="budget"
+                        value="{{ old('budget', $budget->budget_amount) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
-                    @error('budget')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div id="sections" class="w-full space-y-10">
@@ -77,9 +88,6 @@
                                     placeholder="Name of section {{ $i }}"
                                     value="{{ $field->field_name }}"
                                     class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary placeholder:font-semibold">
-                                @error("custom-field{{ $i }}")
-                                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                                @enderror
                             </div>
                             <div class="relative inline-block w-full">
                                 <input type="number" name="custom-field{{ $i }}-amount" data-role="amount" min="0" max="100"
@@ -87,12 +95,6 @@
                                     value="{{ $budgetAmount ? round(($field->field_amount / $budgetAmount) * 100) : '' }}"
                                     class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
                                 <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
-                                @error("custom-field{{ $i }}-amount")
-                                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                                @enderror
-                                @error('sum')
-                                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                                @enderror
                             </div>
                             <button type="button"
                                 class="remove-section {{ $fields->count() <= 1 ? 'hidden' : 'inline-flex' }} items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
@@ -107,22 +109,17 @@
 
                 <div class="w-full relative">
                     <input type="number" name="reset_date" placeholder="Reset Date"
+                        value="{{ old('reset_date', $budget->reset_date) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500placeholder:text-secondary placeholder:font-semibold">
-                    @error('reset_date')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
                 <div class="w-full relative">
                     <select name="currency"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
                         <option value="select">Select currency</option>
                         @foreach ($currencies as $currency)
-                            <option value="{{ $currency['code'] }}">{{ $currency['name'] }} ({{ $currency['code'] }})</option>
+                            <option value="{{ $currency['code'] }}" @selected(old('currency', $budget->currency) === $currency['code'])>{{ $currency['name'] }} ({{ $currency['code'] }})</option>
                         @endforeach
                     </select>
-                    @error('currency')
-                        <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 <div class="flex justify-center items-center">

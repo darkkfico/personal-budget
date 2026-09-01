@@ -7,6 +7,7 @@ use App\Models\CustomBudgetFieldSnapshot;
 use App\Models\CustomBudgetItem;
 use App\Models\CustomBudgetItemSnapshot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CustomBudgetItemController extends Controller
 {
@@ -28,7 +29,9 @@ class CustomBudgetItemController extends Controller
             'field_name' => $field->field_name,
         ]);
 
-        $fieldSnapshot = CustomBudgetFieldSnapshot::where('field_name', $field->field_name)
+        $fieldSnapshot = CustomBudgetFieldSnapshot::query()
+            ->where('field_name', $field->field_name)
+            ->whereHas('customBudgetSnapshot', fn ($query) => $query->where('user_id', Auth::id()))
             ->latest('id')
             ->firstOrFail();
 

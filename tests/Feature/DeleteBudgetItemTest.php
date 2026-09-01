@@ -261,5 +261,62 @@ class DeleteBudgetItemTest extends TestCase
 
         $this->assertDatabaseMissing('auto_budget_items', ['id' => $item->id]);
         $this->assertDatabaseHas('auto_budget_item_snapshots', ['id' => $itemSnapshot->id]);
+
+        $this->actingAs($user)
+            ->get(route('auto.history', $budget))
+            ->assertOk()
+            ->assertSee('Milk')
+            ->assertSee('100');
+    }
+
+    public function test_history_lists_item_snapshots_in_the_month_they_were_taken(): void
+    {
+        $user = User::create([
+            'name' => 'Test',
+            'lastname' => 'User',
+            'email' => 'auto-history-month@example.com',
+            'password' => 'password',
+        ]);
+
+        $budget = AutoBudget::create([
+            'user_id' => $user->id,
+            'budget_amount' => 10000,
+            'currency' => 'MKD',
+            'reset_date' => 1,
+        ]);
+
+        $snapshot = AutoBudgetSnapshot::create([
+            'user_id' => $user->id,
+            'budget_amount' => 10000,
+            'currency' => 'MKD',
+            'reset_date' => 1,
+            'snapshot' => now()->subMonth(),
+            'month' => now()->subMonth()->format('n'),
+        ]);
+
+        $fieldSnapshot = AutoBudgetFieldSnapshot::create([
+            'auto_budget_snapshot_id' => $snapshot->id,
+            'field_name' => 'Groceries',
+            'field_amount' => 5000,
+            'snapshot' => now()->subMonth(),
+            'month' => now()->subMonth()->format('n'),
+        ]);
+
+        AutoBudgetItemSnapshot::create([
+            'auto_budget_field_snapshot_id' => $fieldSnapshot->id,
+            'auto_budget_item_id' => null,
+            'field_name' => 'Groceries',
+            'item_name' => 'Kept after delete',
+            'item_amount' => 250,
+            'snapshot' => now(),
+            'month' => now()->format('n'),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('auto.history', $budget))
+            ->assertOk()
+            ->assertSee(now()->format('F Y'))
+            ->assertSee('Kept after delete')
+            ->assertSee('250');
     }
 }

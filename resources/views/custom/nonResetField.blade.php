@@ -15,9 +15,9 @@
                 <div class="w-full relative">
                     <select name='field'
                         class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500'>
-                        <option value='none'>None</option>
+                        <option value="none" @selected(! $selectedNonResetableId)>None</option>
                         @foreach ($fields as $field)
-                            <option value="{{ $field->id }}">{{ $field->field_name }}</option>
+                            <option value="{{ $field->id }}" @selected((int) $selectedNonResetableId === (int) $field->id)>{{ $field->field_name }}</option>
                         @endforeach
                     </select>
                     @error("currency")

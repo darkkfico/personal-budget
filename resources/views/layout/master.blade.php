@@ -58,7 +58,7 @@
         }
 
         .items-panel.open {
-            max-height: 20rem;
+            max-height: 40rem;
             overflow-y: auto;
         }
 
@@ -80,7 +80,7 @@
     </style>
 </head>
 
-<body class="bg-linear-to-br from-secondary to-butter bg-fixed overflow-x-hidden min-w-0">
+<body class="bg-linear-to-br from-secondary to-butter bg-fixed overflow-x-hidden min-w-0 min-h-dvh">
 
     @yield('header')
 
@@ -88,6 +88,8 @@
 
 
     @yield('footer')
+
+    @stack('modals')
 
 </body>
 

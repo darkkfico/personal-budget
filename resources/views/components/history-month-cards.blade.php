@@ -1,4 +1,4 @@
-@props(['months' => [], 'itemsUrl' => ''])
+@props(['months' => []])
 
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
     @foreach ($months as $month)
@@ -32,11 +32,16 @@
                                 </svg>
                             </span>
                         </button>
-                        <div class="items-panel"
-                            data-items-url="{{ $itemsUrl }}"
-                            data-month="{{ $month['key'] }}"
-                            data-field="{{ $section['name'] }}"
-                            data-currency="{{ $month['currency'] }}">
+                        <div class="items-panel">
+                            @forelse ($section['items'] as $item)
+                                <div class="flex justify-between items-center px-4 py-2.5 bg-lightbutter/60 border-t border-butter/30">
+                                    <span class="text-sm text-secondary/80 font-medium">{{ $item['name'] }}</span>
+                                    <span class="text-sm font-semibold text-secondary">{{ $item['amount'] }}
+                                        {{ $month['currency'] }}</span>
+                                </div>
+                            @empty
+                                <p class="px-4 py-2.5 text-sm text-secondary/70 border-t border-butter/30">No items</p>
+                            @endforelse
                         </div>
                     </div>
                 @endforeach
