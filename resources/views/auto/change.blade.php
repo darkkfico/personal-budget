@@ -134,6 +134,8 @@
         </div>
     </main>
 
+    <x-budget-change-popups current="auto" />
+
     <script src="{{ asset('js/budget-type-toggle.js') }}"></script>
     <script src="{{ asset('js/custom-budget.js') }}"></script>
 @endsection
