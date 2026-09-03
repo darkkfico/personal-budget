@@ -26,13 +26,12 @@
                         <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="relative w-full">
-                    <input type="number" placeholder="Reset date" name="reset_date"
-                        class="w-full bg-transparent border-b-2  border-b-secondary  px-3 py-3  text-md  text-secondary  focus:p-4  outline-none  focus:outline-none  focus:transtition  focus:duration-500  placeholder:text-secondary/70  placeholder:font-semibold">
+                <x-reset-date-field :value="old('reset_date')"
+                    class="w-full bg-transparent border-b-2  border-b-secondary  px-3 py-3  text-md  text-secondary  focus:p-4  outline-none  focus:outline-none  focus:transtition  focus:duration-500  placeholder:text-secondary/70  placeholder:font-semibold">
                     @error('reset_date')
                         <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
                     @enderror
-                </div>
+                </x-reset-date-field>
                 <div class="relative w-full">
                     <select name='currency'
                         class=' w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500'>
@@ -58,4 +57,5 @@
             </form>
         </div>
     </main>
+    <script src="{{ asset('js/budget-type-info.js') }}"></script>
 @endsection

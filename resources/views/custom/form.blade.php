@@ -49,13 +49,12 @@
                     </div>
                 </div>
                 <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
-                <div class="w-full relative">
-                    <input type='number' name='reset_date' placeholder='Reset Date' value="{{ old("reset_date") }}"
-                        class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500placeholder:text-secondary placeholder:font-semibold'>
+                <x-reset-date-field :value="old('reset_date')"
+                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500placeholder:text-secondary placeholder:font-semibold">
                     @error("reset_date")
                         <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
                     @enderror
-                </div>
+                </x-reset-date-field>
                 <div class="w-full relative">
                     <select name='currency'
                         class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500'>
@@ -83,4 +82,5 @@
     </main>
 
     <script src="{{ asset('js/custom-budget.js') }}"></script>
+    <script src="{{ asset('js/budget-type-info.js') }}"></script>
 @endsection

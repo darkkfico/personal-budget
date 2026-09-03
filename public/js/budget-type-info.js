@@ -1,12 +1,9 @@
 (function () {
     const isMd = () => window.matchMedia("(min-width: 768px)").matches;
-    const pairs = [
-        ["autoInfoIcon", "autoInfo"],
-        ["customInfoIcon", "customInfo"],
-    ]
-        .map(([iconId, panelId]) => ({
-            icon: document.getElementById(iconId),
-            panel: document.getElementById(panelId),
+    const pairs = [...document.querySelectorAll("[data-info-icon]")]
+        .map((icon) => ({
+            icon,
+            panel: document.getElementById(icon.getAttribute("aria-controls")),
         }))
         .filter((pair) => pair.icon && pair.panel);
 

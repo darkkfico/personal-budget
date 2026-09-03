@@ -37,11 +37,8 @@
                         value="{{ old('budget', $budget->budget_amount) }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
                 </div>
-                <div class="relative w-full">
-                    <input type="number" placeholder="Reset date" name="reset_date"
-                        value="{{ old('reset_date', $budget->reset_date) }}"
-                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
-                </div>
+                <x-reset-date-field :value="old('reset_date', $budget->reset_date)"
+                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:p-4 outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold" />
                 <div class="relative w-full">
                     <select name="currency"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
@@ -107,11 +104,8 @@
                 </div>
                 <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
 
-                <div class="w-full relative">
-                    <input type="number" name="reset_date" placeholder="Reset Date"
-                        value="{{ old('reset_date', $budget->reset_date) }}"
-                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500placeholder:text-secondary placeholder:font-semibold">
-                </div>
+                <x-reset-date-field :value="old('reset_date', $budget->reset_date)"
+                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500placeholder:text-secondary placeholder:font-semibold" />
                 <div class="w-full relative">
                     <select name="currency"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
@@ -138,4 +132,5 @@
 
     <script src="{{ asset('js/budget-type-toggle.js') }}"></script>
     <script src="{{ asset('js/custom-budget.js') }}"></script>
+    <script src="{{ asset('js/budget-type-info.js') }}"></script>
 @endsection
