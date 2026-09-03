@@ -6,7 +6,7 @@ use App\Models\CustomBudget;
 use App\Models\CustomBudgetField;
 use App\Models\CustomBudgetFieldNonResetable;
 use App\Models\CustomBudgetItem;
-use Carbon\Carbon;
+use App\Services\BudgetResetDate;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -20,11 +20,9 @@ class ResetItemsAmountCustomBudget extends Command
      */
     public function handle()
     {
-        $today = Carbon::now()->day;
-
         $fieldIds = CustomBudgetField::whereIn(
             'custom_budget_id',
-            CustomBudget::where('reset_date', $today)->pluck('id')
+            BudgetResetDate::constrainDueToday(CustomBudget::query())->pluck('id')
         )->pluck('id');
 
         $skipIds = CustomBudgetFieldNonResetable::whereIn('custom_budget_field_id', $fieldIds)

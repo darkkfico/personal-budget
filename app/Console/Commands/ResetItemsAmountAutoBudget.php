@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AutoBudget;
 use App\Models\AutoBudgetField;
 use App\Models\AutoBudgetItem;
-use Carbon\Carbon;
+use App\Services\BudgetResetDate;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -19,11 +19,9 @@ class ResetItemsAmountAutoBudget extends Command
      */
     public function handle()
     {
-        $today = Carbon::now()->day;
-
         $fieldIds = AutoBudgetField::whereIn(
             'auto_budget_id',
-            AutoBudget::where('reset_date', $today)->pluck('id')
+            BudgetResetDate::constrainDueToday(AutoBudget::query())->pluck('id')
         )->where('field_name', '!=', 'Savings')->pluck('id');
 
         AutoBudgetItem::whereIn('auto_budget_field_id', $fieldIds)->update(['item_amount' => 0]);

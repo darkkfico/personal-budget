@@ -17,7 +17,7 @@
                 aria-controls="{{ $panelId }}" aria-label="Reset date info"></i>
             <div class="hidden absolute bg-butter text-secondary text-sm font-light right-0 md:right-full md:mr-3 top-8 md:-top-5 w-[min(18rem,calc(100vw-3rem))] px-6 py-4 rounded-xl max-md:group-hover:inline-block animate-myanimation z-20 shadow-lg"
                 id="{{ $panelId }}">
-                <p>This is the <b>day of the month</b> (1–31) when your budget cycle starts over. On that day, spending in your sections is reset for a new month, and your daily amount is counted from then until the next reset.</p>
+                <p>This is the <b>day of the month</b> (1–31) when your budget cycle starts over. On that day, spending in your sections is reset for a new month, and your daily amount is counted from then until the next reset. If a month does not have that day (for example 31 in April, or 29–31 in February), items reset on the <b>1st of the next month</b> instead — your chosen reset date stays the same.</p>
             </div>
         </div>
     </div>

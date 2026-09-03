@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\AutoBudget;
 use App\Models\CustomBudget;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Carbon\Carbon;
 
 class DailyAllowenceService
 {
@@ -34,11 +34,7 @@ class DailyAllowenceService
 
     private function calculate(float $spendableBudget, float $itemsAmount, string $currency, int $resetDate): array
     {
-        $givenDate = Carbon::createFromDate(now()->year, now()->month, $resetDate);
-
-        if ($givenDate->isPast()) {
-            $givenDate->addMonth();
-        }
+        $givenDate = BudgetResetDate::nextOccurrence($resetDate);
 
         $daysDiff = Carbon::now()->diffInDays($givenDate);
 

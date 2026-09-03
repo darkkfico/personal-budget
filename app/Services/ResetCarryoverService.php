@@ -150,7 +150,7 @@ class ResetCarryoverService
 
     private function shouldPrompt(AutoBudget|CustomBudget $budget): bool
     {
-        if ((int) $budget->reset_date !== (int) Carbon::now()->day) {
+        if (! BudgetResetDate::isResetDay((int) $budget->reset_date)) {
             return false;
         }
 
