@@ -59,10 +59,11 @@
                 </div>
             </form>
 
-            <form method="POST" action="{{ route('custom.convert') }}" id="customChangeForm"
+            <form method="POST" action="{{ route('custom.convert') }}" id="customChangeForm" data-custom-budget-form
                 class="hidden w-full flex flex-col items-center space-y-10 bg-[#a8c5a0] py-8 md:py-10 px-5 md:px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
                 @csrf
                 @method('PATCH')
+                <input type="hidden" name="leftover_section" value="">
                 @if ($errors->any() && $customFormSubmitted)
                     <ul class="w-full space-y-1 text-sm font-semibold text-red-600">
                         @foreach ($errors->all() as $message)
@@ -77,29 +78,58 @@
                 </div>
 
                 <div id="sections" class="w-full space-y-10">
-                    @php $i = 1; @endphp
-                    @foreach ($fields as $field)
+                    @php
+                        $sectionRows = [];
+                        if (old('custom-field1') !== null || old('custom-field1-amount') !== null) {
+                            $n = 1;
+                            while (old("custom-field{$n}") !== null || old("custom-field{$n}-amount") !== null || old("custom-field{$n}-money") !== null) {
+                                $sectionRows[] = [
+                                    'name' => old("custom-field{$n}"),
+                                    'money' => old("custom-field{$n}-money"),
+                                    'percent' => old("custom-field{$n}-amount"),
+                                ];
+                                $n++;
+                            }
+                        } else {
+                            foreach ($fields as $field) {
+                                $sectionRows[] = [
+                                    'name' => $field->field_name,
+                                    'money' => $field->field_amount,
+                                    'percent' => $budgetAmount ? round(($field->field_amount / $budgetAmount) * 100) : '',
+                                ];
+                            }
+                        }
+                    @endphp
+                    @foreach ($sectionRows as $index => $row)
+                        @php $i = $index + 1; @endphp
                         <div class="budget-section w-full space-y-6" data-section>
                             <div class="w-full relative">
                                 <input type="text" name="custom-field{{ $i }}" data-role="name"
                                     placeholder="Name of section {{ $i }}"
-                                    value="{{ $field->field_name }}"
+                                    value="{{ $row['name'] }}"
                                     class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary placeholder:font-semibold">
                             </div>
-                            <div class="relative inline-block w-full">
-                                <input type="number" name="custom-field{{ $i }}-amount" data-role="amount" min="0" max="100"
-                                    placeholder="Percentage of section {{ $i }}"
-                                    value="{{ $budgetAmount ? round(($field->field_amount / $budgetAmount) * 100) : '' }}"
-                                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput">
-                                <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60">%</span>
+                            <div class="flex w-full flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+                                <div class="relative w-full lg:flex-1">
+                                    <input type="number" name="custom-field{{ $i }}-money" data-role="money" min="0" step="any"
+                                        placeholder="Amount of section {{ $i }}"
+                                        value="{{ $row['money'] }}"
+                                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semibold">
+                                </div>
+                                <div class="relative w-full lg:flex-1">
+                                    <input type="number" name="custom-field{{ $i }}-amount" data-role="amount" min="0" max="100" step="any"
+                                        placeholder="Percentage of section {{ $i }}"
+                                        value="{{ $row['percent'] }}"
+                                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semibold">
+                                    <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60 lg:right-4">%</span>
+                                </div>
                             </div>
                             <button type="button"
-                                class="remove-section {{ $fields->count() <= 1 ? 'hidden' : 'inline-flex' }} items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
+                                class="remove-section {{ count($sectionRows) <= 1 ? 'hidden' : 'inline-flex' }} items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
                                 <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
                                 <span class="pointer-events-none">Remove section</span>
                             </button>
                         </div>
-                        @php $i++; @endphp
                     @endforeach
                 </div>
                 <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
@@ -129,8 +159,10 @@
     </main>
 
     <x-budget-change-popups current="auto" />
+    <x-leftover-allocation-popup />
 
     <script src="{{ asset('js/budget-type-toggle.js') }}"></script>
     <script src="{{ asset('js/custom-budget.js') }}"></script>
     <script src="{{ asset('js/budget-type-info.js') }}"></script>
+    <script src="{{ asset('js/leftover-allocation.js') }}"></script>
 @endsection

@@ -9,9 +9,10 @@
         <div class="w-full max-w-250 mx-auto space-y-8 md:space-y-10">
             <h1 class="text-secondary text-3xl md:text-6xl font-extrabold leading-tight">Type the amount of your budget<span class="text-accent">.</span>
             </h1>
-            <form method="POST" action="{{ route("custom.store") }}"
+            <form method="POST" action="{{ route("custom.store") }}" data-custom-budget-form
                 class="w-full  flex flex-col items-center space-y-10 bg-[#a8c5a0] py-8 md:py-10 px-5 md:px-8 text-butter text-xl font-bold rounded-2xl shadow-secondar shadow-2xl">
                 @csrf
+                <input type="hidden" name="leftover_section" value="">
                 <div class="w-full relative">
                     <input type="number" placeholder="Amount of budget" name="budget" value="{{ old("budget") }}"
                         class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
@@ -23,30 +24,47 @@
                     @enderror
                 </div>
                 <div id="sections" class='w-full space-y-10'>
-                    <div class="w-full relative">
-                        <span class="text-red-500 absolute top-0 left-0">*</span>
-                        <input type='text' name='custom-field1' value="{{ old("custom-field1") }}"
-                            placeholder='Name of section 1, eg Groceries...'
-                            class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold'>
-                        @error("custom-field1")
-                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                        @enderror
+                    @php
+                        $n = 1;
+                        while (old("custom-field{$n}") !== null || old("custom-field{$n}-amount") !== null || old("custom-field{$n}-money") !== null) {
+                            $n++;
+                        }
+                        $sectionCount = max(1, $n - 1);
+                    @endphp
+                    @for ($i = 1; $i <= $sectionCount; $i++)
+                    <div class="budget-section w-full space-y-6" data-section>
+                        <div class="w-full relative">
+                            <span class="text-red-500 absolute top-0 left-0">*</span>
+                            <input type="text" name="custom-field{{ $i }}" data-role="name" value="{{ old("custom-field{$i}") }}"
+                                placeholder="{{ $i === 1 ? 'Name of section 1, eg Groceries...' : 'Name of section '.$i }}"
+                                class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary font-semiboldfocus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/70 placeholder:font-semibold">
+                            @error("custom-field{$i}")
+                                <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="flex w-full flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+                            <div class="relative w-full lg:flex-1">
+                                <input type="number" name="custom-field{{ $i }}-money" data-role="money" min="0" step="any"
+                                    placeholder="Amount of section {{ $i }}" value="{{ old("custom-field{$i}-money") }}"
+                                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semibold">
+                            </div>
+                            <div class="relative w-full lg:flex-1">
+                                <input type="number" name="custom-field{{ $i }}-amount" data-role="amount" min="0" max="100" step="any"
+                                    placeholder="Percentage of section {{ $i }}" value="{{ old("custom-field{$i}-amount") }}"
+                                    class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semibold">
+                                <span class="pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60 lg:right-4">%</span>
+                                @error("custom-field{$i}-amount")
+                                    <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                        <button type="button"
+                            class="remove-section {{ $sectionCount <= 1 ? 'hidden' : 'inline-flex' }} items-center gap-2 rounded-xl border-2 border-accent bg-accent/15 px-4 py-2 text-base font-bold text-accent cursor-pointer hover:bg-accent hover:text-butter transition">
+                            <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                            <span class="pointer-events-none">Remove section</span>
+                        </button>
                     </div>
-
-                    <div class='relative inline-block w-full'>
-                        <input type='number' name='custom-field1-amount' min='0' max='100'
-                            placeholder='Percentage of section 1' value="{{ old("custom-field1-amount") }}"
-                            class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500 placeholder:text-secondary/60 placeholder:font-semiboldpercentInput'>
-                        <span class='pointer-events-none absolute right-10 top-1/2 -translate-y-1/2 text-secondary/60'>
-                            %
-                        </span>
-                        @error("custom-field1-amount")
-                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                        @enderror
-                        @error("sum")
-                            <span class="px-2 py-0.5 text-sm text-red-600 absolute top-13 left-1">{{ $message }}</span>
-                        @enderror
-                    </div>
+                    @endfor
                 </div>
                 <button type="button" id="addSection" class="p-4 text-secondary text-2xl cursor-pointer">+ Add section</button>
                 <x-reset-date-field :value="old('reset_date')"
@@ -56,11 +74,11 @@
                     @enderror
                 </x-reset-date-field>
                 <div class="w-full relative">
-                    <select name='currency'
-                        class='w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500'>
-                        <option value='select'>Select currency</option>
+                    <select name="currency"
+                        class="w-full bg-transparent border-b-2 border-b-secondary px-3 py-3 text-md text-secondary focus:scale-[102%] outline-none focus:outline-none focus:transtition focus:duration-500">
+                        <option value="select">Select currency</option>
                         @foreach ($currencies as $currency)
-                            <option value="{{ $currency['code'] }}">{{ $currency['name'] }} ({{ $currency['code'] }})</option>
+                            <option value="{{ $currency['code'] }}" @selected(old('currency') === $currency['code'])>{{ $currency['name'] }} ({{ $currency['code'] }})</option>
                         @endforeach
                     </select>
                     @error("currency")
@@ -81,6 +99,9 @@
         </div>
     </main>
 
+    <x-leftover-allocation-popup />
+
     <script src="{{ asset('js/custom-budget.js') }}"></script>
     <script src="{{ asset('js/budget-type-info.js') }}"></script>
+    <script src="{{ asset('js/leftover-allocation.js') }}"></script>
 @endsection

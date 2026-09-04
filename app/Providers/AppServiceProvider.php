@@ -12,6 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        require_once app_path('helpers.php');
+
         if (! env('DB_URL') && env('DATABASE_URL')) {
             $databaseUrl = env('DATABASE_URL');
 

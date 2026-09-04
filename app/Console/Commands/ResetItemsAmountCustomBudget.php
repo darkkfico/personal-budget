@@ -7,6 +7,7 @@ use App\Models\CustomBudgetField;
 use App\Models\CustomBudgetFieldNonResetable;
 use App\Models\CustomBudgetItem;
 use App\Services\BudgetResetDate;
+use App\Services\ResetCarryoverService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -18,11 +19,17 @@ class ResetItemsAmountCustomBudget extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(ResetCarryoverService $carryover)
     {
+        $budgets = BudgetResetDate::constrainDueToday(CustomBudget::query())->get();
+
+        foreach ($budgets as $budget) {
+            $carryover->captureLeftover($budget);
+        }
+
         $fieldIds = CustomBudgetField::whereIn(
             'custom_budget_id',
-            BudgetResetDate::constrainDueToday(CustomBudget::query())->pluck('id')
+            $budgets->pluck('id')
         )->pluck('id');
 
         $skipIds = CustomBudgetFieldNonResetable::whereIn('custom_budget_field_id', $fieldIds)

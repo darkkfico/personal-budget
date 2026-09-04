@@ -108,6 +108,7 @@
 
     @stack('modals')
 
+    <script src="{{ asset('js/money.js') }}"></script>
 </body>
 
 </html>

@@ -7,7 +7,7 @@
             <h2 id="dailyAllowenceTitle" class="text-secondary text-xl font-extrabold">Daily allowance reached</h2>
             <p class="text-secondary text-sm font-semibold">
                 You have used today's daily allowance. Left for today is
-                <span class="font-extrabold">{{ $amount }} {{ $currency }}</span>.
+                <span class="font-extrabold">{{ money($amount, $currency) }}</span>.
             </p>
             <p class="text-secondary text-sm font-semibold">
                 You can still add expenses, but they will go beyond what was planned for today.

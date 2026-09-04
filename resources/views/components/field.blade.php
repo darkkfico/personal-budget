@@ -17,8 +17,8 @@
                     @endif
                 @endforeach
                 <div class="flex flex-col items-start md:items-end">
-                    <span class="text-lightbutter text-sm md:text-md font-semibold">BUDGET: {{ $fieldAmount }} {{ $budgetCurrency}}</span>
-                    <span class='text-butter text-lg md:text-xl font-extrabold inline-block'>Left: {{ intval($fieldAmount) - $sum }}{{ $budgetCurrency }}</span>
+                    <span class="text-lightbutter text-sm md:text-md font-semibold">BUDGET: {{ money($fieldAmount, $budgetCurrency) }}</span>
+                    <span class='text-butter text-lg md:text-xl font-extrabold inline-block'>Left: {{ money(intval($fieldAmount) - $sum, $budgetCurrency) }}</span>
                 </div>
         </div>
     </div>

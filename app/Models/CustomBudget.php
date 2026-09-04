@@ -12,12 +12,16 @@ class CustomBudget extends Model
         'currency',
         'reset_date',
         'reset_carry_answered_on',
+        'pending_reset_leftover',
+        'reset_leftover_captured_on',
     ];
 
     protected function casts(): array
     {
         return [
             'reset_carry_answered_on' => 'date',
+            'reset_leftover_captured_on' => 'date',
+            'pending_reset_leftover' => 'float',
         ];
     }
 

@@ -10,9 +10,9 @@
             <div class='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full'>
                 
                 <div class="flex flex-col items-start space-y-3 min-w-0">
-                    <h1 class='text-butter text-2xl md:text-4xl font-extrabold break-words'>Budget: {{ $budget->budget_amount }} {{ $budget->currency }}</h1>
-                    <span class='text-lightbutter text-2xl md:text-4xl font-extrabold break-words'>Money left: {{ $budget->budget_amount - ($items->sum('item_amount') ?? 0) }} {{ $budget->currency }}</span>
-                    <span class='text-secondary text-2xl md:text-4xl font-extrabold break-words'>Left for today: {{ $sub1 }}{{ $budget->currency }}</span>
+                    <h1 class='text-butter text-2xl md:text-4xl font-extrabold break-words'>Budget: {{ money($budget->budget_amount, $budget->currency) }}</h1>
+                    <span class='text-lightbutter text-2xl md:text-4xl font-extrabold break-words'>Money left: {{ money($budget->budget_amount - ($items->sum('item_amount') ?? 0), $budget->currency) }}</span>
+                    <span class='text-secondary text-2xl md:text-4xl font-extrabold break-words'>Left for today: {{ money($sub1, $budget->currency) }}</span>
                 </div>
                 
                 <div class="flex flex-col items-stretch md:items-start space-y-3 w-full md:w-auto">

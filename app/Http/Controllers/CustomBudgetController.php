@@ -12,10 +12,12 @@ use App\Models\CustomBudgetItemSnapshot;
 use App\Models\CustomBudgetField;
 use App\Models\CustomBudgetSnapshot;
 use App\Services\BudgetHistoryService;
+use App\Services\CustomBudgetAllocation;
 use App\Services\DailyAllowenceService;
 use App\Services\OnboardingService;
 use App\Services\ResetCarryoverService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +39,7 @@ class CustomBudgetController extends Controller
         return view("custom.form", compact("currencies"));
     }
 
-    public function store(Request $request, OnboardingService $onboarding)
+    public function store(Request $request, OnboardingService $onboarding, CustomBudgetAllocation $allocation)
     {
 
         if(AutoBudget::where("user_id", Auth::id())->exists() || CustomBudget::where('user_id', Auth::id())->exists()){
@@ -52,22 +54,17 @@ class CustomBudgetController extends Controller
 
         $sectionNumber = 1;
 
-        $sum = 0;
-
         while ($request->has("custom-field" . $sectionNumber)) {
             $rules["custom-field{$sectionNumber}"] = ["required", "string"];
             $rules["custom-field{$sectionNumber}-amount"] = ["required", "numeric"];
 
-            $sum += $request->input("custom-field" . $sectionNumber . "-amount");
             $sectionNumber++;
         }
 
         $request->validate($rules);
 
-        if ($sum != 100) {
-            return back()->withErrors([
-                "sum" => "Sum of the percentage must be 100!",
-            ]);
+        if ($redirect = $this->allocationRedirect($request, $allocation)) {
+            return $redirect;
         }
 
         $customBudget = CustomBudget::create([
@@ -169,7 +166,9 @@ class CustomBudgetController extends Controller
     {
         $budget = CustomBudget::where("user_id", Auth::id())->firstOrFail();
 
-        $carryover->applyCustom($budget, request()->boolean("apply"));
+        $carryover->applyCustom($budget, (int) request()->validate([
+            'section_id' => ['required', 'integer'],
+        ])['section_id']);
 
         $allowence->clear();
 
@@ -187,7 +186,7 @@ class CustomBudgetController extends Controller
         return view("custom.change", compact("id", "currencies", "fields", "budgetAmount", "budget"));
     }
 
-    public function edit(Request $request, DailyAllowenceService $allowence)
+    public function edit(Request $request, DailyAllowenceService $allowence, CustomBudgetAllocation $allocation)
     {
 
         $allowence->clear();
@@ -200,23 +199,17 @@ class CustomBudgetController extends Controller
 
         $sectionNumber = 1;
 
-        $sum = 0;
-
-
         while ($request->has("custom-field" . $sectionNumber)) {
             $rules["custom-field" . $sectionNumber] = ["required", "string"];
             $rules["custom-field" . $sectionNumber . "-amount"] = ["required", "numeric"];
 
-            $sum += $request->input("custom-field" . $sectionNumber . "-amount");
             $sectionNumber++;
         }
 
         $request->validate($rules);
 
-        if ($sum != 100) {
-            return back()->withErrors([
-                "sum" => "Sum of the percentage must be 100!",
-            ]);
+        if ($redirect = $this->allocationRedirect($request, $allocation)) {
+            return $redirect;
         }
 
         $submitted = [];
@@ -314,7 +307,7 @@ class CustomBudgetController extends Controller
         return redirect()->route("custom.formNonResetable");
     }
 
-    public function convertFromAuto(Request $request, DailyAllowenceService $allowence)
+    public function convertFromAuto(Request $request, DailyAllowenceService $allowence, CustomBudgetAllocation $allocation)
     {
         $autoBudget = AutoBudget::where("user_id", Auth::id())->firstOrFail();
 
@@ -331,21 +324,17 @@ class CustomBudgetController extends Controller
         ];
 
         $sectionNumber = 1;
-        $sum = 0;
 
         while ($request->has("custom-field" . $sectionNumber)) {
             $rules["custom-field" . $sectionNumber] = ["required", "string"];
             $rules["custom-field" . $sectionNumber . "-amount"] = ["required", "numeric"];
-            $sum += $request->input("custom-field" . $sectionNumber . "-amount");
             $sectionNumber++;
         }
 
         $request->validate($rules);
 
-        if ($sum != 100) {
-            return back()->withErrors([
-                "sum" => "Sum of the percentage must be 100!",
-            ]);
+        if ($redirect = $this->allocationRedirect($request, $allocation)) {
+            return $redirect;
         }
 
         $submitted = [];
@@ -436,5 +425,22 @@ class CustomBudgetController extends Controller
         ['months' => $months, 'chartMonths' => $chartMonths] = $history->summarizeCustom($budget->user_id);
 
         return view('custom.history', compact('budget', 'months', 'chartMonths'));
+    }
+
+    private function allocationRedirect(Request $request, CustomBudgetAllocation $allocation): ?RedirectResponse
+    {
+        $status = $allocation->resolve($request);
+
+        if ($status === CustomBudgetAllocation::OK) {
+            return null;
+        }
+
+        if ($status === CustomBudgetAllocation::OVER) {
+            return back()->withInput()->withErrors([
+                'sum' => 'The amounts add up to more than your budget.',
+            ]);
+        }
+
+        return back()->withInput()->with('leftover_allocation', $allocation->popup($request));
     }
 }

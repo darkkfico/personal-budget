@@ -27,7 +27,7 @@
         const itemName = button.dataset.itemName;
         const current = button.dataset.current;
         const currency = button.dataset.currency || "";
-        const currentText = `${current} ${currency}`.trim();
+        const currentText = window.formatMoney(current, currency);
 
         form.action = button.dataset.action;
 

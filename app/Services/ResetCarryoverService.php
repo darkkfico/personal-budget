@@ -15,30 +15,21 @@ use Carbon\Carbon;
 
 class ResetCarryoverService
 {
-    private const AUTO_FIELDS = [
-        'Groceries' => 0.50,
-        'Wishes' => 0.30,
-        'Savings' => 0.20,
-    ];
-
     public function autoPrompt(AutoBudget $budget): ?array
     {
         if (! $this->shouldPrompt($budget)) {
             return null;
         }
 
-        $field = $budget->autoBudgetFields->firstWhere('field_name', 'Savings');
+        $amount = $this->captureLeftover($budget);
 
-        if (! $field) {
+        if ($amount <= 0) {
+            $this->markAnswered($budget);
+
             return null;
         }
 
-        return [
-            'field_name' => $field->field_name,
-            'amount' => $field->autoBudgetItems()->sum('item_amount'),
-            'budget_amount' => $budget->budget_amount,
-            'currency' => $budget->currency,
-        ];
+        return $this->promptPayload($budget, $amount, $budget->autoBudgetFields()->orderBy('id')->get());
     }
 
     public function customPrompt(CustomBudget $budget): ?array
@@ -47,104 +38,112 @@ class ResetCarryoverService
             return null;
         }
 
-        $fields = $this->customNonResetableFields($budget);
+        $amount = $this->captureLeftover($budget);
 
-        if ($fields->isEmpty()) {
+        if ($amount <= 0) {
+            $this->markAnswered($budget);
+
             return null;
         }
 
-        $amount = $fields->sum(fn ($field) => $field->customBudgetItems()->sum('item_amount'));
-
-        return [
-            'field_name' => $fields->pluck('field_name')->join(', '),
-            'amount' => $amount,
-            'budget_amount' => $budget->budget_amount,
-            'currency' => $budget->currency,
-        ];
+        return $this->promptPayload($budget, $amount, $budget->customBudgetFields()->orderBy('id')->get());
     }
 
-    public function applyAuto(AutoBudget $budget, bool $apply): void
+    public function captureLeftover(AutoBudget|CustomBudget $budget): float
     {
-        if (! $this->shouldPrompt($budget)) {
+        if ($budget->reset_leftover_captured_on?->isToday() && $budget->pending_reset_leftover !== null) {
+            return (float) $budget->pending_reset_leftover;
+        }
+
+        $budget->loadMissing($budget instanceof AutoBudget ? 'autoBudgetFields' : 'customBudgetFields');
+
+        $amount = $this->computeFromItems($budget);
+
+        $budget->update([
+            'pending_reset_leftover' => $amount,
+            'reset_leftover_captured_on' => Carbon::today(),
+        ]);
+
+        return $amount;
+    }
+
+    public function applyAuto(AutoBudget $budget, int $fieldId): void
+    {
+        $field = AutoBudgetField::where('auto_budget_id', $budget->id)->where('id', $fieldId)->first();
+
+        if (! $field || ! $this->shouldPrompt($budget)) {
             return;
         }
 
-        if ($apply) {
-            $field = $budget->autoBudgetFields()->where('field_name', 'Savings')->first();
-            $amount = $field?->autoBudgetItems()->sum('item_amount') ?? 0;
-            $newBudget = max(0, $budget->budget_amount - $amount);
+        $amount = $this->captureLeftover($budget);
 
-            $budget->update([
-                'budget_amount' => $newBudget,
-                'reset_carry_answered_on' => Carbon::today(),
-            ]);
+        if ($amount <= 0) {
+            $this->markAnswered($budget);
 
-            foreach (self::AUTO_FIELDS as $fieldName => $percentage) {
-                AutoBudgetField::where('auto_budget_id', $budget->id)
-                    ->where('field_name', $fieldName)
-                    ->update(['field_amount' => $newBudget * $percentage]);
-            }
-
-            $snapshot = AutoBudgetSnapshot::where('user_id', $budget->user_id)
-                ->where('month', Carbon::now()->format('n'))
-                ->orderByDesc('id')
-                ->first();
-
-            if ($snapshot) {
-                $snapshot->update(['budget_amount' => $newBudget]);
-
-                foreach (self::AUTO_FIELDS as $fieldName => $percentage) {
-                    AutoBudgetFieldSnapshot::where('auto_budget_snapshot_id', $snapshot->id)
-                        ->where('field_name', $fieldName)
-                        ->update(['field_amount' => $newBudget * $percentage]);
-                }
-            }
-        } else {
-            $budget->update(['reset_carry_answered_on' => Carbon::today()]);
-        }
-    }
-
-    public function applyCustom(CustomBudget $budget, bool $apply): void
-    {
-        if (! $this->shouldPrompt($budget)) {
             return;
         }
 
-        if ($apply) {
-            $carryFields = $this->customNonResetableFields($budget);
-            $amount = $carryFields->sum(fn ($field) => $field->customBudgetItems()->sum('item_amount'));
-            $oldBudget = $budget->budget_amount;
-            $newBudget = max(0, $oldBudget - $amount);
+        $newBudget = $budget->budget_amount + $amount;
 
-            $budget->update([
-                'budget_amount' => $newBudget,
-                'reset_carry_answered_on' => Carbon::today(),
-            ]);
+        $budget->update([
+            'budget_amount' => $newBudget,
+            'reset_carry_answered_on' => Carbon::today(),
+            'pending_reset_leftover' => null,
+        ]);
 
-            $fields = CustomBudgetField::where('custom_budget_id', $budget->id)->get();
+        $field->update(['field_amount' => $field->field_amount + $amount]);
 
-            foreach ($fields as $field) {
-                $percent = $oldBudget > 0 ? $field->field_amount / $oldBudget : 0;
-                $field->update(['field_amount' => $newBudget * $percent]);
-            }
+        $snapshot = AutoBudgetSnapshot::where('user_id', $budget->user_id)
+            ->where('month', Carbon::now()->format('n'))
+            ->orderByDesc('id')
+            ->first();
 
-            $snapshot = CustomBudgetSnapshot::where('user_id', $budget->user_id)
-                ->where('month', Carbon::now()->format('n'))
-                ->orderByDesc('id')
-                ->first();
+        if ($snapshot) {
+            $snapshot->update(['budget_amount' => $newBudget]);
 
-            if ($snapshot) {
-                $snapshot->update(['budget_amount' => $newBudget]);
+            AutoBudgetFieldSnapshot::where('auto_budget_snapshot_id', $snapshot->id)
+                ->where('field_name', $field->field_name)
+                ->update(['field_amount' => $field->field_amount]);
+        }
+    }
 
-                $snapshotFields = CustomBudgetFieldSnapshot::where('custom_budget_snapshot_id', $snapshot->id)->get();
+    public function applyCustom(CustomBudget $budget, int $fieldId): void
+    {
+        $field = CustomBudgetField::where('custom_budget_id', $budget->id)->where('id', $fieldId)->first();
 
-                foreach ($snapshotFields as $field) {
-                    $percent = $oldBudget > 0 ? $field->field_amount / $oldBudget : 0;
-                    $field->update(['field_amount' => $newBudget * $percent]);
-                }
-            }
-        } else {
-            $budget->update(['reset_carry_answered_on' => Carbon::today()]);
+        if (! $field || ! $this->shouldPrompt($budget)) {
+            return;
+        }
+
+        $amount = $this->captureLeftover($budget);
+
+        if ($amount <= 0) {
+            $this->markAnswered($budget);
+
+            return;
+        }
+
+        $newBudget = $budget->budget_amount + $amount;
+
+        $budget->update([
+            'budget_amount' => $newBudget,
+            'reset_carry_answered_on' => Carbon::today(),
+            'pending_reset_leftover' => null,
+        ]);
+
+        $field->update(['field_amount' => $field->field_amount + $amount]);
+
+        $snapshot = CustomBudgetSnapshot::where('user_id', $budget->user_id)
+            ->where('month', Carbon::now()->format('n'))
+            ->orderByDesc('id')
+            ->first();
+
+        if ($snapshot) {
+            $snapshot->update(['budget_amount' => $newBudget]);
+
+            CustomBudgetFieldSnapshot::where('custom_budget_snapshot_id', $snapshot->id)
+                ->where('field_name', $field->field_name)
+                ->update(['field_amount' => $field->field_amount]);
         }
     }
 
@@ -157,13 +156,66 @@ class ResetCarryoverService
         return $budget->reset_carry_answered_on?->isToday() !== true;
     }
 
-    private function customNonResetableFields(CustomBudget $budget)
+    private function markAnswered(AutoBudget|CustomBudget $budget): void
+    {
+        $budget->update([
+            'reset_carry_answered_on' => Carbon::today(),
+            'pending_reset_leftover' => null,
+        ]);
+    }
+
+    private function computeFromItems(AutoBudget|CustomBudget $budget): float
+    {
+        if ($budget instanceof AutoBudget) {
+            $leftover = $budget->autoBudgetFields
+                ->where('field_name', '!=', 'Savings')
+                ->sum(function (AutoBudgetField $field) {
+                    $spent = $field->autoBudgetItems()->sum('item_amount');
+
+                    return max(0, (float) $field->field_amount - (float) $spent);
+                });
+        } else {
+            $skipIds = $this->customNonResetableFieldIds($budget);
+            $leftover = $budget->customBudgetFields
+                ->whereNotIn('id', $skipIds->all())
+                ->sum(function (CustomBudgetField $field) {
+                    $spent = $field->customBudgetItems()->sum('item_amount');
+
+                    return max(0, (float) $field->field_amount - (float) $spent);
+                });
+        }
+
+        return $this->roundAmount((float) $leftover, $budget->currency);
+    }
+
+    private function promptPayload(AutoBudget|CustomBudget $budget, float $amount, $fields): array
+    {
+        return [
+            'amount' => $amount,
+            'currency' => $budget->currency,
+            'budget_amount' => $budget->budget_amount,
+            'new_budget' => $this->roundAmount($budget->budget_amount + $amount, $budget->currency),
+            'sections' => $fields->map(fn ($field) => [
+                'id' => $field->id,
+                'name' => $field->field_name,
+            ])->all(),
+        ];
+    }
+
+    private function customNonResetableFieldIds(CustomBudget $budget)
     {
         $fieldIds = CustomBudgetField::where('custom_budget_id', $budget->id)->pluck('id');
 
-        $nonResetableIds = CustomBudgetFieldNonResetable::whereIn('custom_budget_field_id', $fieldIds)
+        return CustomBudgetFieldNonResetable::whereIn('custom_budget_field_id', $fieldIds)
             ->pluck('custom_budget_field_id');
+    }
 
-        return CustomBudgetField::whereIn('id', $nonResetableIds)->get();
+    private function roundAmount(float $amount, string $currency): float
+    {
+        if ($currency === 'MKD') {
+            return (float) round($amount);
+        }
+
+        return round($amount, 2);
     }
 }

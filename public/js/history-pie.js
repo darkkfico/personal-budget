@@ -14,7 +14,7 @@
     const leftoverColor = "#80cbc4";
 
     function formatAmount(value, currency) {
-        return `${value} ${currency}`;
+        return window.formatMoney(value, currency);
     }
 
     function conicGradient(slices) {

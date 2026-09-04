@@ -109,7 +109,9 @@ class AutoBudgetController extends Controller
     {
         $budget = AutoBudget::where('user_id', Auth::id())->firstOrFail();
 
-        $carryover->applyAuto($budget, request()->boolean('apply'));
+        $carryover->applyAuto($budget, (int) request()->validate([
+            'section_id' => ['required', 'integer'],
+        ])['section_id']);
 
         $allowence->clear();
 

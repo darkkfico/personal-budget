@@ -60,7 +60,9 @@ if (hasCustomErrors && typeCustom) {
 toggleBudgetTypeForms();
 
 if (sectionsPopup?.dataset.showOnLoad === "1" || hasCustomErrors) {
-    openSectionsPopup();
+    if (!document.getElementById("leftoverAllocationPopup")) {
+        openSectionsPopup();
+    }
 }
 
 if (hasAutoErrors) {
