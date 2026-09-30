@@ -39,7 +39,7 @@ class CustomBudgetController extends Controller
         return view("custom.form", compact("currencies"));
     }
 
-    public function store(Request $request, OnboardingService $onboarding, CustomBudgetAllocation $allocation)
+    public function store(Request $request, OnboardingService $onboarding, CustomBudgetAllocation $allocation, DailyAllowenceService $allowence)
     {
 
         if(AutoBudget::where("user_id", Auth::id())->exists() || CustomBudget::where('user_id', Auth::id())->exists()){
@@ -66,6 +66,8 @@ class CustomBudgetController extends Controller
         if ($redirect = $this->allocationRedirect($request, $allocation)) {
             return $redirect;
         }
+
+        $allowence->clear();
 
         $customBudget = CustomBudget::create([
             'user_id' => Auth::id(),

@@ -26,41 +26,37 @@ class DailyAllowenceService
 
     public function clear(): void
     {
-        session()->forget('amount_left');
-        session()->forget('deleted_amount');
-        session()->forget('last_day');
-        session()->forget('daily_allowence_warned_on');
+        session()->forget([
+            'amount_left',
+            'deleted_amount',
+            'last_day',
+            'allowance_on',
+            'today_allowance',
+            'items_baseline',
+            'daily_allowence_warned_on',
+        ]);
     }
 
     private function calculate(float $spendableBudget, float $itemsAmount, string $currency, int $resetDate): array
     {
         $givenDate = BudgetResetDate::nextOccurrence($resetDate);
+        $daysDiff = max(1, (int) Carbon::today()->startOfDay()->diffInDays($givenDate, true));
+        $todayAllowance = $this->roundDaily(($spendableBudget - $itemsAmount) / $daysDiff, $currency);
+        $today = Carbon::today()->toDateString();
 
-        $daysDiff = Carbon::now()->diffInDays($givenDate);
+        $frozen = session('allowance_on') === $today
+            && session()->exists('today_allowance')
+            && session()->exists('items_baseline');
 
-        if ($currency == 'MKD') {
-            $daily = round(($spendableBudget - $itemsAmount) / $daysDiff);
+        if (! $frozen) {
+            session([
+                'allowance_on' => $today,
+                'today_allowance' => $todayAllowance,
+                'items_baseline' => $itemsAmount,
+            ]);
+            $daily = $todayAllowance;
         } else {
-            $daily = round(($spendableBudget - $itemsAmount) / $daysDiff, 2);
-        }
-
-        if (session('amount_left')) {
-            if (session('deleted_amount')) {
-                session(['amount_left' => session('amount_left') + session('deleted_amount')]);
-                session()->forget('deleted_amount');
-                $daily = session('amount_left') - $itemsAmount;
-            } elseif (session('last_day')) {
-                if (session('last_day') != Carbon::now()->day) {
-                    session(['last_day' => Carbon::now()->day]);
-                    session(['amount_left' => $itemsAmount + session('amount_left')]);
-                    $daily = session('amount_left') - $itemsAmount;
-                } else {
-                    $daily = session('amount_left') - $itemsAmount;
-                }
-            }
-        } else {
-            session(['amount_left' => $daily]);
-            session(['last_day' => Carbon::now()->day]);
+            $daily = session('today_allowance') - ($itemsAmount - (float) session('items_baseline'));
         }
 
         if ($daily > 0) {
@@ -70,12 +66,21 @@ class DailyAllowenceService
         return [
             'sub1' => $daily,
             'daysDiff' => $daysDiff,
-            'warnDaily' => $daily <= 0 && session('daily_allowence_warned_on') !== Carbon::now()->toDateString(),
+            'warnDaily' => $daily <= 0 && session('daily_allowence_warned_on') !== $today,
         ];
     }
 
     public function acknowledgeWarning(): void
     {
-        session(['daily_allowence_warned_on' => Carbon::now()->toDateString()]);
+        session(['daily_allowence_warned_on' => Carbon::today()->toDateString()]);
+    }
+
+    private function roundDaily(float $amount, string $currency): float
+    {
+        if ($currency === 'MKD') {
+            return (float) round($amount);
+        }
+
+        return round($amount, 2);
     }
 }

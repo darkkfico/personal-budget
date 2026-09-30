@@ -40,11 +40,13 @@ class AutoBudgetController extends Controller
         return view('auto.form', compact('currencies'));
     }
 
-    public function create(AutoBudgetCreateRequest $request, OnboardingService $onboarding)
+    public function create(AutoBudgetCreateRequest $request, OnboardingService $onboarding, DailyAllowenceService $allowence)
     {
         if (AutoBudget::where('user_id', Auth::id())->exists() || CustomBudget::where('user_id', Auth::id())->exists()) {
             return $onboarding->redirect(Auth::user());
         }
+
+        $allowence->clear();
 
         $autoBudget = AutoBudget::create([
             'user_id' => Auth::id(),
